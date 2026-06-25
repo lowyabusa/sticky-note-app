@@ -265,15 +265,17 @@ function Remove-DataDirectory {
 function Start-InstallCleanup {
     $cleanupScriptPath = Join-Path $env:TEMP ("StickyNoteApp-Uninstall-" + [Guid]::NewGuid().ToString("N") + ".cmd")
     $escapedInstallDirectory = $installDirectory.Replace("'", "''")
+    $cleanupWorkingDirectory = Split-Path -Parent $installDirectory
 
     $cleanupLines = @(
         "@echo off",
-        "powershell -NoProfile -ExecutionPolicy Bypass -Command ""Start-Sleep -Seconds 2; if (Test-Path -LiteralPath '$escapedInstallDirectory') { Remove-Item -LiteralPath '$escapedInstallDirectory' -Recurse -Force -ErrorAction SilentlyContinue }""",
+        "cd /d ""%TEMP%""",
+        "powershell -NoProfile -ExecutionPolicy Bypass -Command ""Start-Sleep -Seconds 2; `$removed = `$false; foreach (`$attempt in 1..20) { try { if (-not (Test-Path -LiteralPath '$escapedInstallDirectory')) { `$removed = `$true; break }; Remove-Item -LiteralPath '$escapedInstallDirectory' -Recurse -Force -ErrorAction Stop; if (-not (Test-Path -LiteralPath '$escapedInstallDirectory')) { `$removed = `$true; break } } catch { } Start-Sleep -Milliseconds 500 } ; exit ([int](-not `$removed))""",
         "del /f /q ""%~f0"""
     )
 
     Set-Content -LiteralPath $cleanupScriptPath -Value $cleanupLines -Encoding ASCII
-    Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$cleanupScriptPath`"" -WindowStyle Hidden
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "`"$cleanupScriptPath`"" -WorkingDirectory $cleanupWorkingDirectory -WindowStyle Hidden
 }
 
 function Write-ConsoleSummary {
