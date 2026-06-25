@@ -80,7 +80,6 @@ namespace StickyNoteApp
             _copyFeedbackLabel.BackColor = Color.FromArgb(255, 236, 150);
             _copyFeedbackLabel.ForeColor = Color.FromArgb(70, 56, 15);
             _copyFeedbackLabel.Padding = new Padding(6, 2, 6, 2);
-            _copyFeedbackLabel.Location = new Point(10, 38);
             _copyFeedbackLabel.MouseDown += HandleDragMouseDown;
 
             _saveTimer = new Timer();
@@ -232,6 +231,11 @@ namespace StickyNoteApp
                 return;
             }
 
+            if (_copyFeedbackLabel.Visible)
+            {
+                CenterCopyFeedbackLabel();
+            }
+
             QueueSave();
         }
 
@@ -356,6 +360,11 @@ namespace StickyNoteApp
                 _copyFeedbackLabel.Visible = false;
             }
 
+            if (_copyFeedbackLabel.Visible)
+            {
+                CenterCopyFeedbackLabel();
+            }
+
             _copyButton.Invalidate();
         }
 
@@ -385,9 +394,20 @@ namespace StickyNoteApp
         private void ShowCopyFeedback()
         {
             _copyFeedbackTimer.Stop();
+            CenterCopyFeedbackLabel();
             _copyFeedbackLabel.Visible = true;
             _copyFeedbackLabel.BringToFront();
             _copyFeedbackTimer.Start();
+        }
+
+        private void CenterCopyFeedbackLabel()
+        {
+            Size preferredSize = _copyFeedbackLabel.GetPreferredSize(Size.Empty);
+            _copyFeedbackLabel.Size = preferredSize;
+
+            int x = Math.Max(0, (ClientSize.Width - preferredSize.Width) / 2);
+            int y = Math.Max(0, (ClientSize.Height - preferredSize.Height) / 2);
+            _copyFeedbackLabel.Location = new Point(x, y);
         }
 
         private void HandleCopyButtonPaint(object sender, PaintEventArgs e)
