@@ -114,7 +114,7 @@ namespace StickyNoteApp
         public event EventHandler DeleteRequested;
         public event EventHandler Finalized;
 
-        public void FocusDraftInput()
+        public void FocusDraftInput(bool requestForeground)
         {
             if (Note.IsFinalized || IsDisposed)
             {
@@ -126,18 +126,17 @@ namespace StickyNoteApp
                 Show();
             }
 
-            Activate();
-            BeginInvoke((MethodInvoker)delegate
+            if (requestForeground)
             {
-                if (IsDisposed || Note.IsFinalized)
-                {
-                    return;
-                }
+                NativeMethods.ShowWindow(Handle, NativeMethods.SwRestore);
+                NativeMethods.SetForegroundWindow(Handle);
+            }
+            else
+            {
+                Activate();
+            }
 
-                _inputBox.Focus();
-                _inputBox.SelectionStart = _inputBox.TextLength;
-                _inputBox.SelectionLength = 0;
-            });
+            QueueDraftInputFocus();
         }
 
         public void PrepareForApplicationExit()
@@ -238,7 +237,7 @@ namespace StickyNoteApp
 
         private void HandleActivated(object sender, EventArgs e)
         {
-            FocusDraftInput();
+            QueueDraftInputFocus();
         }
 
         private void HandleSaveTimerTick(object sender, EventArgs e)
@@ -301,6 +300,26 @@ namespace StickyNoteApp
             ApplyCurrentStateToNote();
             _saveTimer.Stop();
             _saveTimer.Start();
+        }
+
+        private void QueueDraftInputFocus()
+        {
+            if (Note.IsFinalized || IsDisposed || !IsHandleCreated)
+            {
+                return;
+            }
+
+            BeginInvoke((MethodInvoker)delegate
+            {
+                if (IsDisposed || Note.IsFinalized)
+                {
+                    return;
+                }
+
+                _inputBox.Select();
+                _inputBox.SelectionStart = _inputBox.TextLength;
+                _inputBox.SelectionLength = 0;
+            });
         }
 
         private void FlushPendingSave()

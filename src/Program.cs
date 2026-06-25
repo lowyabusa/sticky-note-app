@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -50,6 +51,16 @@ namespace StickyNoteApp
 
             try
             {
+                int runningInstanceProcessId = TryFindRunningInstanceProcessId();
+                if (runningInstanceProcessId != 0)
+                {
+                    NativeMethods.AllowSetForegroundWindow(runningInstanceProcessId);
+                }
+                else
+                {
+                    NativeMethods.AllowSetForegroundWindow(NativeMethods.AsfwAny);
+                }
+
                 eventHandle = EventWaitHandle.OpenExisting(CreateNoteEventName);
                 eventHandle.Set();
             }
@@ -63,6 +74,36 @@ namespace StickyNoteApp
                     eventHandle.Dispose();
                 }
             }
+        }
+
+        private static int TryFindRunningInstanceProcessId()
+        {
+            int currentProcessId = Process.GetCurrentProcess().Id;
+            string processName = Process.GetCurrentProcess().ProcessName;
+            Process[] processes = Process.GetProcessesByName(processName);
+
+            try
+            {
+                int index;
+                for (index = 0; index < processes.Length; index++)
+                {
+                    Process process = processes[index];
+                    if (process.Id != currentProcessId)
+                    {
+                        return process.Id;
+                    }
+                }
+            }
+            finally
+            {
+                int index;
+                for (index = 0; index < processes.Length; index++)
+                {
+                    processes[index].Dispose();
+                }
+            }
+
+            return 0;
         }
     }
 }

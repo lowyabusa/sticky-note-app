@@ -82,7 +82,7 @@ namespace StickyNoteApp
             foreach (NoteRecord note in _notes.ToList())
             {
                 NormalizeNote(note);
-                OpenNote(note);
+                OpenNote(note, false);
             }
         }
 
@@ -100,7 +100,7 @@ namespace StickyNoteApp
 
             NoteRecord noteRecord = CreateNewDraftNote();
             _notes.Add(noteRecord);
-            OpenNote(noteRecord);
+            OpenNote(noteRecord, false);
             PersistAllNotes();
         }
 
@@ -128,7 +128,7 @@ namespace StickyNoteApp
             };
         }
 
-        private void OpenNote(NoteRecord note)
+        private void OpenNote(NoteRecord note, bool requestForeground)
         {
             StickyNoteForm form = new StickyNoteForm(note);
             form.PersistRequested += HandlePersistRequested;
@@ -141,7 +141,7 @@ namespace StickyNoteApp
 
             if (!note.IsFinalized)
             {
-                form.FocusDraftInput();
+                form.FocusDraftInput(requestForeground);
             }
         }
 
@@ -311,13 +311,13 @@ namespace StickyNoteApp
 
             if (draft != null)
             {
-                draft.FocusDraftInput();
+                draft.FocusDraftInput(true);
                 return;
             }
 
             NoteRecord noteRecord = CreateNewDraftNote();
             _notes.Add(noteRecord);
-            OpenNote(noteRecord);
+            OpenNote(noteRecord, true);
             PersistAllNotes();
         }
     }
