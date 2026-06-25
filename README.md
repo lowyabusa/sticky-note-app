@@ -15,7 +15,7 @@ StickyNote App is a small Windows app for simple, persistent desktop notes. It o
 
 It handles all of this in one run:
 
-* builds the EXE
+* publishes a self-contained Windows EXE
 * optionally creates a desktop shortcut
 * places the uninstall entry in the output folder
 
@@ -31,6 +31,8 @@ Usually the simpler option is:
 .\build.cmd
 ```
 
+The build machine needs a .NET SDK that supports `net8.0-windows`.
+
 ## After the Build
 
 The finished app is here:
@@ -38,6 +40,8 @@ The finished app is here:
 ```text
 app\StickyNoteApp.exe
 ```
+
+This published EXE is self-contained for `win-x64`, so the target machine does not need a separate .NET runtime installation.
 
 On first start, a new note opens immediately. Press `Enter` to finalize it. After that, the note can only be moved, resized, or deleted with `X`.
 
@@ -83,4 +87,4 @@ If you want to keep your notes, answer that prompt with `No`.
 
 ## For Advanced Users
 
-The app is implemented as a native WinForms application on the classic .NET Framework and is built directly with the Windows `csc.exe` compiler already available on the machine. It does not use `dotnet publish`, Electron, or any additional build runtime.
+The app is implemented as a native WinForms application and is published with `dotnet publish` as a self-contained single-file Windows build. The build machine needs the .NET SDK, but the generated app is intended to run on matching `win-x64` machines without a separate .NET runtime install.

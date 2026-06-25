@@ -1,5 +1,7 @@
 dist/
 app/
+bin/
+obj/
 *.user
 *.suo
 *.cache

@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 2.0
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$projectPath = Join-Path $scriptRoot "StickyNoteApp.csproj"
 $sourceDir = Join-Path $scriptRoot "src"
 $scriptsDir = Join-Path $scriptRoot "scripts"
 $outputDir = Join-Path $scriptRoot "app"
@@ -18,6 +19,8 @@ $uninstallCmdTarget = Join-Path $outputDir "Uninstall StickyNote App.cmd"
 $shortcutFileName = "StickyNote App.lnk"
 $setupTitle = "StickyNote App Setup"
 $newLine = [Environment]::NewLine
+$runtimeIdentifier = "win-x64"
+$buildConfiguration = "Release"
 
 function Initialize-Ui {
     Add-Type -AssemblyName System.Windows.Forms
@@ -25,18 +28,23 @@ function Initialize-Ui {
     [System.Windows.Forms.Application]::EnableVisualStyles()
 }
 
-function Get-CompilerPath {
-    $compilerCandidates = @(
-        "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe",
-        "C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
-    )
-
-    $compiler = $compilerCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-    if (-not $compiler) {
-        throw "csc.exe was not found. Expected under C:\Windows\Microsoft.NET\Framework(64)\v4.0.30319\csc.exe."
+function Get-DotNetPath {
+    $command = Get-Command dotnet -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
     }
 
-    return $compiler
+    $dotnetCandidates = @(
+        "C:\Program Files\dotnet\dotnet.exe",
+        "C:\Program Files (x86)\dotnet\dotnet.exe"
+    )
+
+    $dotnetPath = $dotnetCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $dotnetPath) {
+        throw ".NET SDK was not found. Install a .NET SDK that supports net8.0-windows and re-run build.cmd."
+    }
+
+    return $dotnetPath
 }
 
 function Reset-OutputDirectory {
@@ -63,6 +71,10 @@ function Reset-OutputDirectory {
 }
 
 function Get-SourceFiles {
+    if (-not (Test-Path $projectPath)) {
+        throw "Project file was not found: $projectPath"
+    }
+
     $sources = Get-ChildItem -Path $sourceDir -Filter *.cs | Sort-Object Name | ForEach-Object { $_.FullName }
     if (-not $sources) {
         throw "No C# source files were found under $sourceDir."
@@ -72,21 +84,21 @@ function Get-SourceFiles {
 }
 
 function Invoke-AppBuild {
-    $compiler = Get-CompilerPath
-    $sources = Get-SourceFiles
+    $dotnet = Get-DotNetPath
+    $null = Get-SourceFiles
 
     $arguments = @(
-        "/nologo",
-        "/target:winexe",
-        "/out:$outputExe",
-        "/r:System.dll",
-        "/r:System.Core.dll",
-        "/r:System.Drawing.dll",
-        "/r:System.Windows.Forms.dll",
-        "/r:System.Runtime.Serialization.dll"
-    ) + $sources
+        "publish",
+        $projectPath,
+        "-c", $buildConfiguration,
+        "-r", $runtimeIdentifier,
+        "--self-contained", "true",
+        "-p:DebugType=None",
+        "-p:DebugSymbols=false",
+        "-o", $outputDir
+    )
 
-    & $compiler @arguments
+    & $dotnet @arguments
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed."
     }
@@ -196,6 +208,7 @@ function Write-ConsoleSummary {
     Write-Host "StickyNote App is ready."
     Write-Host "App folder: $outputDir"
     Write-Host "EXE: $outputExe"
+    Write-Host "Publish mode: self-contained ($runtimeIdentifier)"
 
     if ($ShortcutCreated) {
         Write-Host "Desktop shortcut: $ShortcutPath"
