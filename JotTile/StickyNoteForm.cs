@@ -215,7 +215,7 @@ namespace JotTile
         private void InitializeStateFromNote()
         {
             _inputBox.Text = _interaction.EditorText;
-            _displayLabel.Text = _interaction.CommittedText;
+            _displayLabel.Text = PrepareSavedDisplayText(_interaction.CommittedText);
             ApplyInteractionUi();
 
             if (_interaction.Mode == NoteInteractionMode.Editing)
@@ -337,7 +337,7 @@ namespace JotTile
                 return;
             }
 
-            _displayLabel.Text = _interaction.CommittedText;
+            _displayLabel.Text = PrepareSavedDisplayText(_interaction.CommittedText);
             ApplySavedBounds(targetBounds);
             ApplyInteractionUi();
         }
@@ -439,7 +439,7 @@ namespace JotTile
 
             _inputBox.Visible = isEditing;
             _displayLabel.Visible = !isEditing;
-            _displayLabel.Text = _interaction.CommittedText;
+            _displayLabel.Text = PrepareSavedDisplayText(_interaction.CommittedText);
             _copyButton.CommandEnabled = !isEditing;
             _editSaveButton.Glyph = isEditing ? NoteButtonGlyph.Save : NoteButtonGlyph.Edit;
 
@@ -496,6 +496,23 @@ namespace JotTile
             _copyFeedbackLabel.Location = new Point(
                 Math.Max(0, (ClientSize.Width - preferredSize.Width) / 2),
                 Math.Max(0, (ClientSize.Height - preferredSize.Height) / 2));
+        }
+
+        private static string PrepareSavedDisplayText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return string.Empty;
+            }
+
+            if (text.EndsWith("\r\n", StringComparison.Ordinal) ||
+                text.EndsWith("\n", StringComparison.Ordinal) ||
+                text.EndsWith("\r", StringComparison.Ordinal))
+            {
+                return text + " ";
+            }
+
+            return text;
         }
     }
 }
