@@ -12,7 +12,7 @@ namespace JotTile
         private NoteIconButton _copyButton = null!;
         private NoteIconButton _closeButton = null!;
         private TextBox _inputBox = null!;
-        private RichTextBox _savedTextView = null!;
+        private DisplayRichTextBox _savedTextView = null!;
         private Label _copyFeedbackLabel = null!;
         private Font? _noteFont;
 
@@ -52,7 +52,7 @@ namespace JotTile
             _inputBox.TextChanged += HandleEditorTextChanged;
             _inputBox.MouseDown += HandleDragMouseDown;
 
-            _savedTextView = new RichTextBox();
+            _savedTextView = new DisplayRichTextBox();
             _savedTextView.BorderStyle = BorderStyle.None;
             _savedTextView.Multiline = true;
             _savedTextView.ReadOnly = true;

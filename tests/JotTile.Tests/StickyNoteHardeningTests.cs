@@ -112,7 +112,7 @@ namespace JotTile.Tests
         }
 
         [Fact]
-        public void SavedTextViewUsesReadOnlyRichTextBox()
+        public void SavedTextViewUsesNonSelectableReadOnlyRichTextBox()
         {
             RunInSta(delegate
             {
@@ -127,6 +127,7 @@ namespace JotTile.Tests
                 {
                     Assert.True(form.SavedTextView.ReadOnly);
                     Assert.True(form.SavedTextView.Multiline);
+                    Assert.False(form.SavedTextView.CanSelect);
                     Assert.Equal(RichTextBoxScrollBars.Vertical, form.SavedTextView.ScrollBars);
                 }
             });

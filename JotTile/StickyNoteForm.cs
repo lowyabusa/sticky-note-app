@@ -90,7 +90,7 @@ namespace JotTile
             get { return _interaction.CommittedText; }
         }
 
-        internal RichTextBox SavedTextView
+        internal DisplayRichTextBox SavedTextView
         {
             get { return _savedTextView; }
         }
