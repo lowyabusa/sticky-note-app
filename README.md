@@ -1,10 +1,10 @@
-# ![alt text](JotTileApp.ico) JotTile
+# ![JotTile icon](JotTileApp.ico) JotTile
 
-![JotTile note](JotTile/Assets/aNote.png)  ![alt text](JotTile/Assets/aCopyeasy.png)  ![alt text](JotTile/Assets/aCustom.png)
+![JotTile default note](JotTile/Assets/aNote.png)  ![JotTile copy feedback](JotTile/Assets/aCopyeasy.png)  ![JotTile custom appearance](JotTile/Assets/aCustom.png)
 
-JotTile is a small local WinForms note app for Windows. It keeps sticky notes offline, restores them on sign-in, supports a tray-only idle state, and ships with a separate `config.exe` for appearance and behavior settings.
+JotTile is a small local WinForms sticky-note app for Windows. It keeps notes offline, restores them at sign-in, supports a tray-only idle state, and ships with a separate `config.exe` for appearance and behavior settings.
 
-## Build And Run
+## Build and Run
 
 Double-click `build.cmd` or run:
 
@@ -12,7 +12,7 @@ Double-click `build.cmd` or run:
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-The script is looking for restoreable notes inside the repository folder, publishes `JotTile.exe` and `config.exe` as self-contained `win-x64` single-file executables, optionally creates a desktop shortcut, and places the uninstall launcher into `app\`.
+The script restores the solution, publishes `JotTile.exe` and `config.exe` as self-contained `win-x64` single-file executables, optionally creates a desktop shortcut, and places the uninstall launcher into `app\`.
 
 Published output:
 
@@ -24,24 +24,23 @@ app\Uninstall JotTile.cmd
 
 ## Main Workflow
 
-Create a new note via the /app/JotTile.exe
-or at the Windows dropdown tray with right click.
+Create a new note by launching `app\JotTile.exe` or by right-clicking the Windows tray icon.
 
 ![Create a new note](JotTile/Assets/addNote.png)
 
-- A brand-new note opens in `Editing-Mode`.
-- `Enter` inserts a line break for text formation.
+- A brand-new note opens in `Editing` mode.
+- `Enter` inserts line breaks while you type.
 - `Ctrl+S` or the Save button commits text and note size atomically.
 - After a successful save, the note switches to `Saved` and auto-resizes to fit the committed text.
-- `F2` or the edit button re-enters editing.
+- `F2` or the Edit button re-enters editing.
 - `Ctrl+C` copies the full saved note only in `Saved` mode.
 - `Ctrl+W` follows the same close path as the Close button. By default it deletes the note instantly.
 
 ## Tray Behavior
 
-The app owns a tray icon as seen above. `Exit` closes the App and the tray icon.
+The app uses the tray icon shown above. Choosing `Exit` closes the app and removes the tray icon.
 
-Closing or deleting the last visible note does not terminate the app. JotTile can stay alive with zero open note windows and still respond from the tray unless you closed the app.
+Closing or deleting the last visible note does not terminate JotTile. The app can stay alive with zero open note windows until you exit it from the tray.
 
 ## Settings
 
@@ -55,7 +54,7 @@ Closing or deleting the last visible note does not terminate the app. JotTile ca
 
 Saved settings are applied live to running notes through a local Windows event. No network connection is involved.
 
-## Data, Migration, And Recovery
+## Data, Migration, and Recovery
 
 Current data paths:
 
@@ -112,3 +111,8 @@ The repo is split into:
 - `tests/JotTile.Tests` for xUnit coverage
 
 The app stays intentionally local and small. There is no cloud sync, account system, network feature, plugin system, or telemetry.
+
+## Keywords
+
+- `Windows sticky notes app`, `offline notes app`, `desktop note app`, `post-it notes for Windows`, `notes app`,`note app`
+- `WinForms`, `local`, `local-first`, `self-contained Windows app`, `tray note app`, `config.exe`, `xUnit`
