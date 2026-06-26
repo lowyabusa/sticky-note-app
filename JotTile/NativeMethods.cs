@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace StickyNoteApp
+namespace JotTile
 {
     internal static class NativeMethods
     {

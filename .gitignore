@@ -2,6 +2,8 @@ dist/
 app/
 bin/
 obj/
+.vs/
+TestResults/
 *.user
 *.suo
 *.cache

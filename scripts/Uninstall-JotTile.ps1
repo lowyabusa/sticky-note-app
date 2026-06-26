@@ -6,8 +6,7 @@ param(
     [switch]$KeepRunningApp,
     [string]$DataDirectory,
     [string]$DesktopDirectoryOverride,
-    [string]$RunKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
-    [string]$RunValueName = "SimpleStickyNotes"
+    [string]$RunKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,10 +14,11 @@ Set-StrictMode -Version 2.0
 
 $scriptPath = $MyInvocation.MyCommand.Path
 $installDirectory = Split-Path -Parent $scriptPath
-$appExePath = Join-Path $installDirectory "StickyNoteApp.exe"
-$uninstallCmdPath = Join-Path $installDirectory "Uninstall StickyNote App.cmd"
-$uninstallPs1Path = Join-Path $installDirectory "Uninstall-StickyNoteApp.ps1"
-$dialogTitle = "StickyNote App Uninstall"
+$appExePath = Join-Path $installDirectory "JotTile.exe"
+$configExePath = Join-Path $installDirectory "config.exe"
+$uninstallCmdPath = Join-Path $installDirectory "Uninstall JotTile.cmd"
+$uninstallPs1Path = Join-Path $installDirectory "Uninstall-JotTile.ps1"
+$dialogTitle = "JotTile Uninstall"
 $newLine = [Environment]::NewLine
 
 function Initialize-Ui {
@@ -57,20 +57,6 @@ function Show-InfoDialog {
     ) | Out-Null
 }
 
-function Show-ErrorDialog {
-    param(
-        [string]$Message,
-        [string]$Title
-    )
-
-    [System.Windows.Forms.MessageBox]::Show(
-        $Message,
-        $Title,
-        [System.Windows.Forms.MessageBoxButtons]::OK,
-        [System.Windows.Forms.MessageBoxIcon]::Error
-    ) | Out-Null
-}
-
 function Get-DesktopDirectory {
     if ($DesktopDirectoryOverride) {
         return $DesktopDirectoryOverride
@@ -84,6 +70,10 @@ function Get-DataDirectory {
         return $DataDirectory
     }
 
+    return Join-Path $env:APPDATA "JotTile"
+}
+
+function Get-LegacyDataDirectory {
     return Join-Path $env:APPDATA "SimpleStickyNotes"
 }
 
@@ -111,15 +101,19 @@ function Test-AppRunning {
 function Get-RunningAppProcesses {
     $matchingProcesses = New-Object System.Collections.ArrayList
     $normalizedAppExePath = Get-NormalizedPathOrNull -PathValue $appExePath
+    $normalizedConfigExePath = Get-NormalizedPathOrNull -PathValue $configExePath
 
-    foreach ($process in Get-Process StickyNoteApp -ErrorAction SilentlyContinue) {
-        try {
-            $processPath = Get-NormalizedPathOrNull -PathValue $process.Path
-            if ($processPath -and [string]::Equals($processPath, $normalizedAppExePath, [StringComparison]::OrdinalIgnoreCase)) {
-                [void]$matchingProcesses.Add($process)
+    foreach ($processName in @("JotTile", "config")) {
+        foreach ($process in Get-Process $processName -ErrorAction SilentlyContinue) {
+            try {
+                $processPath = Get-NormalizedPathOrNull -PathValue $process.Path
+                if (($processPath -and [string]::Equals($processPath, $normalizedAppExePath, [StringComparison]::OrdinalIgnoreCase)) -or
+                    ($processPath -and [string]::Equals($processPath, $normalizedConfigExePath, [StringComparison]::OrdinalIgnoreCase))) {
+                    [void]$matchingProcesses.Add($process)
+                }
             }
-        }
-        catch {
+            catch {
+            }
         }
     }
 
@@ -140,11 +134,11 @@ function Get-ShouldCloseRunningApp {
     }
 
     if ($NoPrompt) {
-        throw "StickyNote App is currently running. Re-run uninstall with -CloseRunningApp or run it interactively to confirm closing the app."
+        throw "JotTile is currently running. Re-run uninstall with -CloseRunningApp or run it interactively to confirm closing the app."
     }
 
     $message = @(
-        "StickyNote App is currently running."
+        "JotTile or config.exe is currently running."
         ""
         "Close the running app and continue uninstall?"
     ) -join $newLine
@@ -171,7 +165,7 @@ function Stop-RunningAppProcesses {
         Start-Sleep -Milliseconds 250
     }
 
-    throw "StickyNote App could not be closed. Please close it manually and run uninstall again."
+    throw "JotTile could not be closed. Please close it manually and run uninstall again."
 }
 
 function Get-ShouldRemoveData {
@@ -192,6 +186,7 @@ function Get-ShouldRemoveData {
         ""
         "This will affect:"
         (Get-DataDirectory)
+        (Get-LegacyDataDirectory)
     ) -join $newLine
 
     return Show-YesNoDialog -Message $message -Title $dialogTitle
@@ -202,9 +197,11 @@ function Remove-AutostartEntry {
         return
     }
 
-    $property = Get-ItemProperty -Path $RunKeyPath -Name $RunValueName -ErrorAction SilentlyContinue
-    if ($null -ne $property) {
-        Remove-ItemProperty -Path $RunKeyPath -Name $RunValueName -ErrorAction Stop
+    foreach ($runValueName in @("JotTile", "SimpleStickyNotes")) {
+        $property = Get-ItemProperty -Path $RunKeyPath -Name $runValueName -ErrorAction SilentlyContinue
+        if ($null -ne $property) {
+            Remove-ItemProperty -Path $RunKeyPath -Name $runValueName -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -256,14 +253,15 @@ function Remove-DataDirectory {
         return
     }
 
-    $targetDirectory = Get-DataDirectory
-    if (Test-Path $targetDirectory) {
-        Remove-Item -LiteralPath $targetDirectory -Force -Recurse
+    foreach ($targetDirectory in @((Get-DataDirectory), (Get-LegacyDataDirectory))) {
+        if (Test-Path $targetDirectory) {
+            Remove-Item -LiteralPath $targetDirectory -Force -Recurse
+        }
     }
 }
 
 function Start-InstallCleanup {
-    $cleanupScriptPath = Join-Path $env:TEMP ("StickyNoteApp-Uninstall-" + [Guid]::NewGuid().ToString("N") + ".cmd")
+    $cleanupScriptPath = Join-Path $env:TEMP ("JotTile-Uninstall-" + [Guid]::NewGuid().ToString("N") + ".cmd")
     $escapedInstallDirectory = $installDirectory.Replace("'", "''")
     $cleanupWorkingDirectory = Split-Path -Parent $installDirectory
 
@@ -283,7 +281,7 @@ function Write-ConsoleSummary {
         [bool]$RemovedData
     )
 
-    Write-Host "StickyNote App was removed."
+    Write-Host "JotTile was removed."
     Write-Host "App folder removed: $installDirectory"
 
     if ($RemovedData) {
@@ -305,7 +303,7 @@ function Show-CompletionDialog {
 
     $dataText = if ($RemovedData) { "Saved notes were removed." } else { "Saved notes were kept." }
     $message = @(
-        "StickyNote App was removed."
+        "JotTile was removed."
         ""
         "App folder removed:"
         $installDirectory
@@ -325,7 +323,7 @@ if (Test-AppRunning) {
 
     if (-not $shouldCloseRunningApp) {
         if (-not $NoPrompt) {
-            Show-InfoDialog -Message "Uninstall was canceled. StickyNote App is still running." -Title $dialogTitle
+            Show-InfoDialog -Message "Uninstall was canceled. JotTile is still running." -Title $dialogTitle
         }
 
         exit 0

@@ -1,90 +1,111 @@
-# StickyNote App
+# JotTile
 
-StickyNote App is a small Windows app for simple, persistent desktop notes. It opens as a real Windows window, saves notes locally, and restores active notes after a Windows restart.
+JotTile is a small local WinForms note app for Windows. It keeps sticky notes offline, restores them on sign-in, supports a tray-only idle state, and ships with a separate `config.exe` for appearance and behavior settings.
 
-## Quick Start
+## Build And Run
 
-1. Double-click `build.cmd` in the project folder.
-2. The setup builds the app.
-3. After the build, setup optionally asks whether you want a desktop shortcut.
-4. Start the app by double-clicking `app\StickyNoteApp.exe` or by using the desktop shortcut.
-
-## What `build.ps1` Does
-
-`build.ps1` is the main first-time setup entry point.
-
-It handles all of this in one run:
-
-* publishes a self-contained Windows EXE
-* optionally creates a desktop shortcut
-* places the uninstall entry in the output folder
-
-Direct PowerShell command:
+Double-click `build.cmd` or run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Usually the simpler option is:
+The script restores the solution, publishes `JotTile.exe` and `config.exe` as self-contained `win-x64` single-file executables, optionally creates a desktop shortcut, and places the uninstall launcher into `app\`.
 
-```powershell
-.\build.cmd
-```
-
-The build machine needs a .NET SDK that supports `net8.0-windows`.
-
-## After the Build
-
-The finished app is here:
+Published output:
 
 ```text
-app\StickyNoteApp.exe
+app\JotTile.exe
+app\config.exe
+app\Uninstall JotTile.cmd
 ```
 
-This published EXE is self-contained for `win-x64`, so the target machine does not need a separate .NET runtime installation.
+## Main Workflow
 
-On first start, a new note opens immediately. Press `Enter` to finalize it. After that, the note can only be moved, resized, or deleted with `X`.
+- A brand-new note opens in `Editing`.
+- `Enter` inserts a line break. It never saves.
+- `Ctrl+S` or the Save button commits text and note size atomically.
+- After a successful save, the note switches to `Saved` and auto-resizes to fit the committed text.
+- `F2` re-enters editing with the last committed text.
+- `Ctrl+C` copies the full saved note only in `Saved` mode.
+- `Ctrl+W` follows the same close path as the Close button.
 
-## Where Notes Are Stored
+## Tray Behavior
 
-Notes are saved locally here:
+The app now owns a tray icon with:
+
+- `New note`
+- `Show notes`
+- `Exit`
+
+Closing or deleting the last visible note does not terminate the app. JotTile can stay alive with zero open note windows and still respond from the tray.
+
+## Settings
+
+`config.exe` manages global settings for all notes:
+
+- note colors, gradients, frame and stroke colors/thicknesses
+- a curated font selection for note text
+- delete confirmation behavior
+- exit confirmation and unsaved-exit behavior
+- launch-at-sign-in
+
+Saved settings are applied live to running notes through a local Windows event. No network connection is involved.
+
+## Data, Migration, And Recovery
+
+Current data paths:
 
 ```text
-%APPDATA%\SimpleStickyNotes\notes.json
+%APPDATA%\JotTile\notes.json
+%APPDATA%\JotTile\settings.json
+%LOCALAPPDATA%\JotTile\logs\app.log
 ```
 
-There is no cloud, no account, and no network feature.
+Legacy notes under `%APPDATA%\SimpleStickyNotes\notes.json` are copied forward on first use if no new JotTile data file exists yet. The legacy file is never deleted automatically.
 
-## Auto Start
+Persistence uses temp-file + replace semantics and keeps backups:
 
-When the real app starts for the first time, it automatically sets up user-level auto start so existing notes reappear after Windows sign-in.
+```text
+notes.bak
+settings.bak
+```
 
-It uses:
+If `notes.json` or `settings.json` becomes unreadable, JotTile attempts to recover from the matching backup and quarantines the corrupt file instead of crashing.
+
+## Autostart
+
+Autostart uses the current user Run key:
 
 ```text
 HKCU\Software\Microsoft\Windows\CurrentVersion\Run
 ```
 
-No administrator rights are required.
+No administrator rights are required. The old `SimpleStickyNotes` Run value is cleaned up automatically.
 
 ## Uninstall
 
-After the build, the output folder contains a clear uninstall entry:
+`app\Uninstall JotTile.cmd` removes:
+
+- the JotTile autostart entry
+- any leftover `SimpleStickyNotes` autostart entry
+- desktop shortcuts pointing at this JotTile build
+- the published app folder
+
+It separately asks whether the stored notes should also be removed from:
 
 ```text
-app\Uninstall StickyNote App.cmd
+%APPDATA%\JotTile
+%APPDATA%\SimpleStickyNotes
 ```
 
-The uninstall process:
+## Development
 
-* asks whether it should close StickyNote App first if the app is currently running
-* removes the auto start entry
-* removes any desktop shortcut that points to this exact app EXE
-* removes the app files in the output folder
-* separately asks whether saved notes under `%APPDATA%\SimpleStickyNotes` should also be removed
+The repo is split into:
 
-If you want to keep your notes, answer that prompt with `No`.
+- `JotTile.Core` for persistence, settings, layout, logging, and note-state contracts
+- `JotTile` for the main WinForms app
+- `JotTile.Config` for `config.exe`
+- `tests/JotTile.Tests` for xUnit coverage
 
-## For Advanced Users
-
-The app is implemented as a native WinForms application and is published with `dotnet publish` as a self-contained single-file Windows build. The build machine needs the .NET SDK, but the generated app is intended to run on matching `win-x64` machines without a separate .NET runtime install.
+The app stays intentionally local and small. There is no cloud sync, account system, network feature, plugin system, or telemetry.

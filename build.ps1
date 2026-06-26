@@ -8,16 +8,18 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 2.0
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$projectPath = Join-Path $scriptRoot "StickyNoteApp.csproj"
-$sourceDir = Join-Path $scriptRoot "src"
+$solutionPath = Join-Path $scriptRoot "JotTile.sln"
+$appProjectPath = Join-Path $scriptRoot "JotTile\JotTile.csproj"
+$configProjectPath = Join-Path $scriptRoot "JotTile.Config\JotTile.Config.csproj"
 $scriptsDir = Join-Path $scriptRoot "scripts"
 $outputDir = Join-Path $scriptRoot "app"
-$outputExe = Join-Path $outputDir "StickyNoteApp.exe"
-$uninstallScriptSource = Join-Path $scriptsDir "Uninstall-StickyNoteApp.ps1"
-$uninstallScriptTarget = Join-Path $outputDir "Uninstall-StickyNoteApp.ps1"
-$uninstallCmdTarget = Join-Path $outputDir "Uninstall StickyNote App.cmd"
-$shortcutFileName = "StickyNote App.lnk"
-$setupTitle = "StickyNote App Setup"
+$outputExe = Join-Path $outputDir "JotTile.exe"
+$configExe = Join-Path $outputDir "config.exe"
+$uninstallScriptSource = Join-Path $scriptsDir "Uninstall-JotTile.ps1"
+$uninstallScriptTarget = Join-Path $outputDir "Uninstall-JotTile.ps1"
+$uninstallCmdTarget = Join-Path $outputDir "Uninstall JotTile.cmd"
+$shortcutFileName = "JotTile.lnk"
+$setupTitle = "JotTile Setup"
 $newLine = [Environment]::NewLine
 $runtimeIdentifier = "win-x64"
 $buildConfiguration = "Release"
@@ -65,42 +67,71 @@ function Reset-OutputDirectory {
         }
 
         if (-not $removed) {
-            throw "The app output is locked: $($item.FullName). Close any running StickyNoteApp.exe and run the build again."
+            throw "The app output is locked: $($item.FullName). Close any running JotTile.exe or config.exe and run the build again."
         }
     }
 }
 
-function Get-SourceFiles {
-    if (-not (Test-Path $projectPath)) {
-        throw "Project file was not found: $projectPath"
+function Assert-ProjectsExist {
+    if (-not (Test-Path $solutionPath)) {
+        throw "Solution file was not found: $solutionPath"
     }
 
-    $sources = Get-ChildItem -Path $sourceDir -Filter *.cs | Sort-Object Name | ForEach-Object { $_.FullName }
-    if (-not $sources) {
-        throw "No C# source files were found under $sourceDir."
+    if (-not (Test-Path $appProjectPath)) {
+        throw "App project file was not found: $appProjectPath"
     }
 
-    return $sources
+    if (-not (Test-Path $configProjectPath)) {
+        throw "Config project file was not found: $configProjectPath"
+    }
 }
 
 function Invoke-AppBuild {
     $dotnet = Get-DotNetPath
-    $null = Get-SourceFiles
+    Assert-ProjectsExist
 
-    $arguments = @(
+    $restoreArguments = @(
+        "restore",
+        $solutionPath
+    )
+
+    & $dotnet @restoreArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Restore failed."
+    }
+
+    $publishArguments = @(
         "publish",
-        $projectPath,
+        $appProjectPath,
         "-c", $buildConfiguration,
         "-r", $runtimeIdentifier,
         "--self-contained", "true",
+        "-p:PublishSingleFile=true",
         "-p:DebugType=None",
         "-p:DebugSymbols=false",
         "-o", $outputDir
     )
 
-    & $dotnet @arguments
+    & $dotnet @publishArguments
     if ($LASTEXITCODE -ne 0) {
-        throw "Build failed."
+        throw "JotTile publish failed."
+    }
+
+    $configPublishArguments = @(
+        "publish",
+        $configProjectPath,
+        "-c", $buildConfiguration,
+        "-r", $runtimeIdentifier,
+        "--self-contained", "true",
+        "-p:PublishSingleFile=true",
+        "-p:DebugType=None",
+        "-p:DebugSymbols=false",
+        "-o", $outputDir
+    )
+
+    & $dotnet @configPublishArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "config.exe publish failed."
     }
 }
 
@@ -150,7 +181,7 @@ function Should-CreateDesktopShortcut {
     $message = @(
         "Build completed successfully."
         ""
-        "Create a desktop shortcut for StickyNote App?"
+        "Create a desktop shortcut for JotTile?"
     ) -join $newLine
 
     return Show-YesNoDialog -Message $message -Title $setupTitle
@@ -172,7 +203,7 @@ function New-DesktopShortcut {
         $shortcut = $shell.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = $TargetPath
         $shortcut.WorkingDirectory = Split-Path -Parent $TargetPath
-        $shortcut.Description = "Launch StickyNote App"
+        $shortcut.Description = "Launch JotTile"
         $shortcut.IconLocation = "$TargetPath,0"
         $shortcut.Save()
     }
@@ -192,7 +223,7 @@ function New-UninstallLauncher {
 
     $cmdContent = @(
         "@echo off",
-        "powershell -ExecutionPolicy Bypass -File ""%~dp0Uninstall-StickyNoteApp.ps1"" %*"
+        "powershell -ExecutionPolicy Bypass -File ""%~dp0Uninstall-JotTile.ps1"" %*"
     )
 
     Set-Content -LiteralPath $uninstallCmdTarget -Value $cmdContent -Encoding ASCII
@@ -205,9 +236,10 @@ function Write-ConsoleSummary {
     )
 
     Write-Host ""
-    Write-Host "StickyNote App is ready."
+    Write-Host "JotTile is ready."
     Write-Host "App folder: $outputDir"
-    Write-Host "EXE: $outputExe"
+    Write-Host "Main EXE: $outputExe"
+    Write-Host "Config EXE: $configExe"
     Write-Host "Publish mode: self-contained ($runtimeIdentifier)"
 
     if ($ShortcutCreated) {
@@ -233,13 +265,16 @@ function Show-CompletionDialog {
     $shortcutLine = if ($ShortcutCreated) { $ShortcutPath } else { "Not created" }
 
     $message = @(
-        "StickyNote App is ready."
+        "JotTile is ready."
         ""
         "App folder:"
         $outputDir
         ""
-        "Start:"
+        "Main app:"
         $outputExe
+        ""
+        "Config app:"
+        $configExe
         ""
         "Desktop shortcut:"
         $shortcutLine
@@ -255,7 +290,7 @@ if (-not $NoPrompt) {
     Initialize-Ui
 }
 
-Write-Host "Building StickyNote App..."
+Write-Host "Building JotTile..."
 Reset-OutputDirectory
 Invoke-AppBuild
 New-UninstallLauncher

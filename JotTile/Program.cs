@@ -2,20 +2,18 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows.Forms;
+using JotTile.Core;
 
-namespace StickyNoteApp
+namespace JotTile
 {
     internal static class Program
     {
-        internal const string AppMutexName = "Local\\SimpleStickyNotes.App";
-        internal const string CreateNoteEventName = "Local\\SimpleStickyNotes.CreateNote";
-
         [STAThread]
         private static void Main(string[] args)
         {
             bool restoreOnly = HasArgument(args, "--restore-only");
             bool createdNew;
-            Mutex mutex = new Mutex(true, AppMutexName, out createdNew);
+            Mutex mutex = new Mutex(true, AppIdentity.AppMutexName, out createdNew);
 
             if (!createdNew)
             {
@@ -33,8 +31,7 @@ namespace StickyNoteApp
 
         private static bool HasArgument(string[] args, string expected)
         {
-            int index;
-            for (index = 0; index < args.Length; index++)
+            for (int index = 0; index < args.Length; index++)
             {
                 if (string.Equals(args[index], expected, StringComparison.OrdinalIgnoreCase))
                 {
@@ -47,7 +44,7 @@ namespace StickyNoteApp
 
         private static void SignalRunningInstance()
         {
-            EventWaitHandle eventHandle = null;
+            EventWaitHandle? eventHandle = null;
 
             try
             {
@@ -61,7 +58,7 @@ namespace StickyNoteApp
                     NativeMethods.AllowSetForegroundWindow(NativeMethods.AsfwAny);
                 }
 
-                eventHandle = EventWaitHandle.OpenExisting(CreateNoteEventName);
+                eventHandle = EventWaitHandle.OpenExisting(AppIdentity.CreateNoteEventName);
                 eventHandle.Set();
             }
             catch (WaitHandleCannotBeOpenedException)
@@ -84,20 +81,17 @@ namespace StickyNoteApp
 
             try
             {
-                int index;
-                for (index = 0; index < processes.Length; index++)
+                for (int index = 0; index < processes.Length; index++)
                 {
-                    Process process = processes[index];
-                    if (process.Id != currentProcessId)
+                    if (processes[index].Id != currentProcessId)
                     {
-                        return process.Id;
+                        return processes[index].Id;
                     }
                 }
             }
             finally
             {
-                int index;
-                for (index = 0; index < processes.Length; index++)
+                for (int index = 0; index < processes.Length; index++)
                 {
                     processes[index].Dispose();
                 }

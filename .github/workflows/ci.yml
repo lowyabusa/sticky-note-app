@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore JotTile.sln
+
+      - name: Build
+        run: dotnet build JotTile.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/JotTile.Tests/JotTile.Tests.csproj -c Release --no-build
+
+      - name: Publish JotTile
+        run: dotnet publish JotTile/JotTile.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o app
+
+      - name: Publish config.exe
+        run: dotnet publish JotTile.Config/JotTile.Config.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o app

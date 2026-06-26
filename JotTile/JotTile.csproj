@@ -3,10 +3,10 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
-    <AssemblyName>StickyNoteApp</AssemblyName>
-    <RootNamespace>StickyNoteApp</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
+    <AssemblyName>JotTile</AssemblyName>
+    <RootNamespace>JotTile</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -14,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="src\**\*.cs" />
+    <Compile Include="**\*.cs" Exclude="bin\**;obj\**" />
+    <ProjectReference Include="..\JotTile.Core\JotTile.Core.csproj" />
   </ItemGroup>
 </Project>
