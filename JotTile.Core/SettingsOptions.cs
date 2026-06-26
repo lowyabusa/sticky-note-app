@@ -8,6 +8,9 @@ namespace JotTile.Core
         {
             new NamedValue("Black", "#000000"),
             new NamedValue("White", "#FFFFFF"),
+            new NamedValue("Button gray", "#D9D9D9"),
+            new NamedValue("Button hover gray", "#ECECEC"),
+            new NamedValue("Button disabled gray", "#686868"),
             new NamedValue("Amber", "#FFD768"),
             new NamedValue("Sun", "#FFE06D"),
             new NamedValue("Honey", "#FFF7AB"),
