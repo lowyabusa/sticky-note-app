@@ -251,7 +251,7 @@ namespace JotTile
 
             foreach (StickyNoteForm form in _formsById.Values.ToList())
             {
-                form.ApplySettings(_settings, true);
+                form.ApplySettings(_settings, false);
             }
         }
 
