@@ -53,21 +53,25 @@ namespace JotTile.Core
         {
             Color backColor;
             Color borderColor;
+            Color lineColor;
 
             if (!enabled)
             {
                 backColor = SystemDisabledColor;
                 borderColor = Color.FromArgb(83, 83, 83);
+                lineColor = Color.FromArgb(38, 38, 38);
             }
             else if (isDangerButton)
             {
                 backColor = pressed ? SystemClosePressedColor : (hovered ? SystemCloseHoverColor : SystemCloseColor);
                 borderColor = Color.FromArgb(112, 24, 24);
+                lineColor = Color.White;
             }
             else
             {
                 backColor = pressed ? SystemPressedColor : (hovered ? SystemHoverColor : SystemButtonColor);
                 borderColor = Color.FromArgb(120, 120, 120);
+                lineColor = Color.FromArgb(34, 34, 34);
             }
 
             using (SolidBrush brush = new SolidBrush(backColor))
@@ -77,7 +81,7 @@ namespace JotTile.Core
                 graphics.DrawRectangle(pen, bounds.X, bounds.Y, bounds.Width - 1, bounds.Height - 1);
             }
 
-            DrawGlyph(graphics, glyph, bounds, enabled ? glyphColor : disabledGlyphColor);
+            DrawGlyph(graphics, glyph, bounds, lineColor);
         }
 
         private static void DrawCustomStyledButton(
