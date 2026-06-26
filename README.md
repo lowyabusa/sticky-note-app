@@ -1,5 +1,7 @@
 # JotTile
 
+                            ![alt text](<2026-06-26 23_11_51-.png>)
+
 JotTile is a small local WinForms note app for Windows. It keeps sticky notes offline, restores them on sign-in, supports a tray-only idle state, and ships with a separate `config.exe` for appearance and behavior settings.
 
 ## Build And Run
@@ -22,13 +24,19 @@ app\Uninstall JotTile.cmd
 
 ## Main Workflow
 
-- A brand-new note opens in `Editing`.
-- `Enter` inserts a line break. It never saves.
+Generate a new note via the /app/JotTile.exe
+or at the Windows dropdown tray with right click.
+
+                        [alt text](<2026-06-26 22_52_43-.png>)
+
+
+- A brand-new note opens in `Editing-Mode`.
+- `Enter` inserts a line break for text formation.
 - `Ctrl+S` or the Save button commits text and note size atomically.
 - After a successful save, the note switches to `Saved` and auto-resizes to fit the committed text.
 - `F2` re-enters editing with the last committed text.
 - `Ctrl+C` copies the full saved note only in `Saved` mode.
-- `Ctrl+W` follows the same close path as the Close button.
+- `Ctrl+W` follows the same close path as the Close button. By default it deletes the note instantly.
 
 ## Tray Behavior
 
