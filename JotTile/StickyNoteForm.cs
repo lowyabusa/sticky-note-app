@@ -160,6 +160,16 @@ namespace JotTile
             }
         }
 
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams createParams = base.CreateParams;
+                createParams.ExStyle = BuildShadowNoteExtendedStyle(createParams.ExStyle);
+                return createParams;
+            }
+        }
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (_interaction.Mode == NoteInteractionMode.Editing && keyData == (Keys.Control | Keys.S))
@@ -187,6 +197,11 @@ namespace JotTile
             }
 
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        internal static int BuildShadowNoteExtendedStyle(int exStyle)
+        {
+            return (exStyle | NativeMethods.WsExToolWindow) & ~NativeMethods.WsExAppWindow;
         }
 
         protected override void WndProc(ref Message message)

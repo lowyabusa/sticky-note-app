@@ -23,5 +23,6 @@
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="bin\**;obj\**" />
     <ProjectReference Include="..\..\JotTile.Core\JotTile.Core.csproj" />
+    <ProjectReference Include="..\..\JotTile\JotTile.csproj" />
   </ItemGroup>
 </Project>

@@ -19,6 +19,8 @@ namespace JotTile
         internal const int HtBottomLeft = 0x0010;
         internal const int HtBottomRight = 0x0011;
         internal const int SwRestore = 9;
+        internal const int WsExToolWindow = 0x00000080;
+        internal const int WsExAppWindow = 0x00040000;
 
         [DllImport("user32.dll")]
         internal static extern bool AllowSetForegroundWindow(int processId);
