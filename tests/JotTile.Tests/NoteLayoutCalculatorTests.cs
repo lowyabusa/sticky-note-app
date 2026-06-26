@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Windows.Forms;
 using JotTile.Core;
 using Xunit;
 
@@ -55,6 +56,25 @@ namespace JotTile.Tests
             Rectangle trailingNewline = _calculator.CalculateBounds("hello\r\n", new Rectangle(20, 20, 160, 90), _font, new Rectangle(0, 0, 800, 600), _metrics);
 
             Assert.True(trailingNewline.Height >= singleLine.Height);
+        }
+
+        [Fact]
+        public void DescenderHeavyLastLineGetsEnoughHeightForSavedLabel()
+        {
+            string text = "gggggg\r\npppppp\r\nyyyyyy";
+            Rectangle bounds = _calculator.CalculateBounds(text, new Rectangle(20, 20, 260, 90), _font, new Rectangle(0, 0, 800, 600), _metrics);
+
+            using (Label label = new Label())
+            {
+                label.AutoSize = false;
+                label.Font = _font;
+                label.Text = text;
+                int textWidth = bounds.Width - _metrics.HorizontalChrome;
+                label.MaximumSize = new Size(textWidth, 0);
+
+                Size preferredSize = label.GetPreferredSize(new Size(textWidth, 0));
+                Assert.True(bounds.Height >= preferredSize.Height + _metrics.VerticalChrome);
+            }
         }
     }
 }

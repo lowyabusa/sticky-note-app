@@ -56,7 +56,20 @@ namespace JotTile.Core
             string measuredText = PrepareMeasuredText(text);
             TextFormatFlags flags = TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding | TextFormatFlags.Left;
             Size size = TextRenderer.MeasureText(measuredText, font, new Size(width, int.MaxValue), flags);
-            return Math.Max(font.Height + 8, size.Height);
+            int labelPreferredHeight = MeasureLabelPreferredHeight(measuredText, font, width);
+            return Math.Max(font.Height + 8, Math.Max(size.Height, labelPreferredHeight));
+        }
+
+        private static int MeasureLabelPreferredHeight(string text, Font font, int width)
+        {
+            using (Label label = new Label())
+            {
+                label.AutoSize = false;
+                label.Font = font;
+                label.Text = text;
+                label.MaximumSize = new Size(width, 0);
+                return label.GetPreferredSize(new Size(width, 0)).Height;
+            }
         }
 
         private static Rectangle ClampToWorkingArea(Rectangle bounds, Rectangle workingArea, int margin)
