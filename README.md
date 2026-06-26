@@ -39,11 +39,7 @@ or at the Windows dropdown tray with right click.
 
 ## Tray Behavior
 
-The app now owns a tray icon with:
-
-- `New note`
-- `Show notes`
-- `Exit`
+The app owns a tray icon as seen above.
 
 Closing or deleting the last visible note does not terminate the app. JotTile can stay alive with zero open note windows and still respond from the tray.
 
