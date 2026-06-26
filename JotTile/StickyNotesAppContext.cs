@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -105,6 +106,8 @@ namespace JotTile
             ContextMenuStrip menu = new ContextMenuStrip();
             menu.Items.Add("New note", null, HandleNewNoteMenuClick);
             menu.Items.Add("Show notes", null, HandleShowNotesMenuClick);
+            menu.Items.Add("Minimize notes", null, HandleMinimizeNotesMenuClick);
+            menu.Items.Add("Settings", null, HandleSettingsMenuClick);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Exit", null, HandleExitMenuClick);
 
@@ -130,6 +133,16 @@ namespace JotTile
         private void HandleExitMenuClick(object? sender, EventArgs e)
         {
             ExitThread();
+        }
+
+        private void HandleMinimizeNotesMenuClick(object? sender, EventArgs e)
+        {
+            MinimizeAllNotes();
+        }
+
+        private void HandleSettingsMenuClick(object? sender, EventArgs e)
+        {
+            OpenSettings();
         }
 
         private void OpenExistingNotes()
@@ -264,6 +277,48 @@ namespace JotTile
             if (focusTarget != null)
             {
                 focusTarget.EnsureVisibleFromTray();
+            }
+        }
+
+        private void MinimizeAllNotes()
+        {
+            foreach (StickyNoteForm form in _formsById.Values.ToList())
+            {
+                form.HideToTray();
+            }
+        }
+
+        private void OpenSettings()
+        {
+            string appDirectory = Path.GetDirectoryName(Application.ExecutablePath) ?? string.Empty;
+            string configPath = Path.Combine(appDirectory, AppIdentity.ConfigExecutableName);
+
+            if (!File.Exists(configPath))
+            {
+                _logger.Warning("open-settings", "Settings executable was not found.", null);
+                MessageBox.Show(
+                    "JotTile could not open Settings because config.exe was not found next to JotTile.exe.",
+                    AppIdentity.DialogTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                ProcessStartInfo startInfo = new ProcessStartInfo(configPath);
+                startInfo.UseShellExecute = true;
+                startInfo.WorkingDirectory = appDirectory;
+                Process.Start(startInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("open-settings", "Launching config.exe failed.", ex);
+                MessageBox.Show(
+                    "JotTile could not open Settings.",
+                    AppIdentity.DialogTitle,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
