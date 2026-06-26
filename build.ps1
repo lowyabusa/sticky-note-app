@@ -307,6 +307,14 @@ function Show-CompletionDialog {
     Show-InfoDialog -Message $message -Title $setupTitle
 }
 
+function Start-InstalledApp {
+    if ($NoPrompt) {
+        return
+    }
+
+    Start-Process -FilePath $outputExe -WorkingDirectory $outputDir | Out-Null
+}
+
 if (-not $NoPrompt) {
     Initialize-Ui
 }
@@ -326,3 +334,4 @@ if (Should-CreateDesktopShortcut) {
 
 Write-ConsoleSummary -ShortcutCreated $shortcutCreated -ShortcutPath $shortcutPath
 Show-CompletionDialog -ShortcutCreated $shortcutCreated -ShortcutPath $shortcutPath
+Start-InstalledApp
