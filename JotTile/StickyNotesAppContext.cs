@@ -112,12 +112,29 @@ namespace JotTile
             menu.Items.Add("Exit", null, HandleExitMenuClick);
 
             NotifyIcon notifyIcon = new NotifyIcon();
-            notifyIcon.Icon = SystemIcons.Information;
+            notifyIcon.Icon = LoadApplicationIcon();
             notifyIcon.Text = AppIdentity.ProductName;
             notifyIcon.Visible = true;
             notifyIcon.ContextMenuStrip = menu;
             notifyIcon.DoubleClick += HandleNewNoteMenuClick;
             return notifyIcon;
+        }
+
+        private static Icon LoadApplicationIcon()
+        {
+            try
+            {
+                Icon? extractedIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                if (extractedIcon != null)
+                {
+                    return extractedIcon;
+                }
+            }
+            catch
+            {
+            }
+
+            return SystemIcons.Information;
         }
 
         private void HandleNewNoteMenuClick(object? sender, EventArgs e)

@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>JotTile</AssemblyName>
     <RootNamespace>JotTile</RootNamespace>
+    <ApplicationIcon>Assets\JotTileApp.ico</ApplicationIcon>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
