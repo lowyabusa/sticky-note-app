@@ -27,8 +27,7 @@ app\Uninstall JotTile.cmd
 Generate a new note via the /app/JotTile.exe
 or at the Windows dropdown tray with right click.
 
-                        ![Main window](C:\Users\Privat\Documents\StickyNote App\2026-06-26 22_52_43-.png)
-
+                        ![Main window]
 
 - A brand-new note opens in `Editing-Mode`.
 - `Enter` inserts a line break for text formation.
