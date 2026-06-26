@@ -90,9 +90,14 @@ namespace JotTile
             get { return _interaction.CommittedText; }
         }
 
-        internal DisplayRichTextBox SavedTextView
+        internal Panel SavedTextHost
         {
-            get { return _savedTextView; }
+            get { return _savedTextHost; }
+        }
+
+        internal Label SavedTextLabel
+        {
+            get { return _savedTextLabel; }
         }
 
         internal void FocusEditingSurface(bool requestForeground)
@@ -490,7 +495,7 @@ namespace JotTile
             bool isEditing = _interaction.Mode == NoteInteractionMode.Editing;
 
             _inputBox.Visible = isEditing;
-            _savedTextView.Visible = !isEditing;
+            _savedTextHost.Visible = !isEditing;
             UpdateSavedTextPresentation();
             _copyButton.CommandEnabled = !isEditing;
             _editSaveButton.Glyph = isEditing ? NoteButtonGlyph.Save : NoteButtonGlyph.Edit;
@@ -514,9 +519,9 @@ namespace JotTile
         private void UpdateSavedTextPresentation()
         {
             string displayText = PrepareSavedDisplayText(_interaction.CommittedText);
-            if (!string.Equals(_savedTextView.Text, displayText, StringComparison.Ordinal))
+            if (!string.Equals(_savedTextLabel.Text, displayText, StringComparison.Ordinal))
             {
-                _savedTextView.Text = displayText;
+                _savedTextLabel.Text = displayText;
             }
 
             UpdateSavedTextScrollState();
@@ -524,22 +529,25 @@ namespace JotTile
 
         private void UpdateSavedTextScrollState()
         {
-            if (_noteFont == null || _savedTextView.IsDisposed)
+            if (_noteFont == null || _savedTextHost.IsDisposed || _savedTextLabel.IsDisposed)
             {
                 return;
             }
 
-            int viewportWidth = Math.Max(1, _savedTextView.ClientSize.Width);
-            int viewportHeight = Math.Max(1, _savedTextView.ClientSize.Height);
-            int textHeight = _layoutCalculator.MeasureDisplayTextHeight(_savedTextView.Text, _noteFont, viewportWidth);
-            RichTextBoxScrollBars targetScrollBars = textHeight > viewportHeight
-                ? RichTextBoxScrollBars.Vertical
-                : RichTextBoxScrollBars.None;
+            int hostWidth = Math.Max(1, _savedTextHost.ClientSize.Width);
+            int hostHeight = Math.Max(1, _savedTextHost.ClientSize.Height);
+            int labelWidth = hostWidth;
+            int preferredHeight = _savedTextLabel.GetPreferredSize(new Size(labelWidth, 0)).Height;
 
-            if (_savedTextView.ScrollBars != targetScrollBars)
+            if (preferredHeight > hostHeight)
             {
-                _savedTextView.ScrollBars = targetScrollBars;
+                labelWidth = Math.Max(1, hostWidth - SystemInformation.VerticalScrollBarWidth);
+                preferredHeight = _savedTextLabel.GetPreferredSize(new Size(labelWidth, 0)).Height;
             }
+
+            _savedTextLabel.Location = new Point(0, 0);
+            _savedTextLabel.Size = new Size(labelWidth, Math.Max(preferredHeight, hostHeight));
+            _savedTextHost.AutoScrollMinSize = new Size(labelWidth, preferredHeight);
         }
 
         private void QueueEditorFocus()

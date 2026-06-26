@@ -112,7 +112,7 @@ namespace JotTile.Tests
         }
 
         [Fact]
-        public void SavedTextViewUsesNonSelectableReadOnlyRichTextBox()
+        public void SavedTextViewUsesNonInteractiveScrollableLabelHost()
         {
             RunInSta(delegate
             {
@@ -125,10 +125,11 @@ namespace JotTile.Tests
                     delegate(NoteRecord _, Rectangle __) { return true; },
                     delegate(StickyNoteForm _) { }))
                 {
-                    Assert.True(form.SavedTextView.ReadOnly);
-                    Assert.True(form.SavedTextView.Multiline);
-                    Assert.False(form.SavedTextView.CanSelect);
-                    Assert.Equal(RichTextBoxScrollBars.Vertical, form.SavedTextView.ScrollBars);
+                    Assert.True(form.SavedTextHost.AutoScroll);
+                    Assert.False(form.SavedTextHost.TabStop);
+                    Assert.False(form.SavedTextLabel.CanSelect);
+                    Assert.Equal(new Point(0, 0), form.SavedTextLabel.Location);
+                    Assert.True(form.SavedTextHost.VerticalScroll.Visible || form.SavedTextHost.AutoScrollMinSize.Height > form.SavedTextHost.ClientSize.Height);
                 }
             });
         }
@@ -147,7 +148,7 @@ namespace JotTile.Tests
                     delegate(NoteRecord _, Rectangle __) { return true; },
                     delegate(StickyNoteForm _) { }))
                 {
-                    Assert.Equal(RichTextBoxScrollBars.None, form.SavedTextView.ScrollBars);
+                    Assert.True(form.SavedTextHost.AutoScrollMinSize.Height <= form.SavedTextHost.ClientSize.Height);
                 }
             });
         }

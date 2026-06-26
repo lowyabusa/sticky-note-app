@@ -12,7 +12,8 @@ namespace JotTile
         private NoteIconButton _copyButton = null!;
         private NoteIconButton _closeButton = null!;
         private TextBox _inputBox = null!;
-        private DisplayRichTextBox _savedTextView = null!;
+        private Panel _savedTextHost = null!;
+        private Label _savedTextLabel = null!;
         private Label _copyFeedbackLabel = null!;
         private Font? _noteFont;
 
@@ -52,17 +53,19 @@ namespace JotTile
             _inputBox.TextChanged += HandleEditorTextChanged;
             _inputBox.MouseDown += HandleDragMouseDown;
 
-            _savedTextView = new DisplayRichTextBox();
-            _savedTextView.BorderStyle = BorderStyle.None;
-            _savedTextView.Multiline = true;
-            _savedTextView.ReadOnly = true;
-            _savedTextView.TabStop = false;
-            _savedTextView.DetectUrls = false;
-            _savedTextView.HideSelection = true;
-            _savedTextView.WordWrap = true;
-            _savedTextView.ScrollBars = RichTextBoxScrollBars.None;
-            _savedTextView.ShortcutsEnabled = false;
-            _savedTextView.MouseDown += HandleDragMouseDown;
+            _savedTextHost = new Panel();
+            _savedTextHost.AutoScroll = true;
+            _savedTextHost.TabStop = false;
+            _savedTextHost.MouseDown += HandleDragMouseDown;
+
+            _savedTextLabel = new Label();
+            _savedTextLabel.AutoSize = false;
+            _savedTextLabel.UseMnemonic = false;
+            _savedTextLabel.TextAlign = ContentAlignment.TopLeft;
+            _savedTextLabel.Padding = Padding.Empty;
+            _savedTextLabel.Margin = Padding.Empty;
+            _savedTextLabel.MouseDown += HandleDragMouseDown;
+            _savedTextHost.Controls.Add(_savedTextLabel);
 
             _copyFeedbackLabel = new Label();
             _copyFeedbackLabel.AutoSize = true;
@@ -72,7 +75,7 @@ namespace JotTile
             _copyFeedbackLabel.ForeColor = Color.FromArgb(70, 56, 15);
             _copyFeedbackLabel.MouseDown += HandleDragMouseDown;
 
-            Controls.Add(_savedTextView);
+            Controls.Add(_savedTextHost);
             Controls.Add(_inputBox);
             Controls.Add(_copyFeedbackLabel);
             Controls.Add(_editSaveButton);
@@ -98,9 +101,11 @@ namespace JotTile
 
             ApplyNoteFont();
             _inputBox.ForeColor = textColor;
-            _savedTextView.ForeColor = textColor;
+            _savedTextHost.ForeColor = textColor;
+            _savedTextLabel.ForeColor = textColor;
             _inputBox.BackColor = Blend(backgroundStart, backgroundEnd);
-            _savedTextView.BackColor = Blend(backgroundStart, backgroundEnd);
+            _savedTextHost.BackColor = Blend(backgroundStart, backgroundEnd);
+            _savedTextLabel.BackColor = Blend(backgroundStart, backgroundEnd);
 
             ApplyButtonPalette(_editSaveButton, buttonColor, buttonHoverColor, buttonDisabledColor, renderMode);
             ApplyButtonPalette(_copyButton, buttonColor, buttonHoverColor, buttonDisabledColor, renderMode);
@@ -134,7 +139,7 @@ namespace JotTile
             Font? previousFont = _noteFont;
             _noteFont = nextFont;
             _inputBox.Font = nextFont;
-            _savedTextView.Font = nextFont;
+            _savedTextLabel.Font = nextFont;
             if (previousFont != null)
             {
                 previousFont.Dispose();
@@ -159,7 +164,7 @@ namespace JotTile
             _copyButton.Bounds = copyBounds;
             _editSaveButton.Bounds = editBounds;
             _inputBox.Bounds = layout.TextBounds;
-            _savedTextView.Bounds = layout.TextBounds;
+            _savedTextHost.Bounds = layout.TextBounds;
             UpdateSavedTextScrollState();
         }
 
