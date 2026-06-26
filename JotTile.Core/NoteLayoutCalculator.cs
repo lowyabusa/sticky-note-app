@@ -32,6 +32,11 @@ namespace JotTile.Core
             return ClampToWorkingArea(targetBounds, workingArea, metrics.ScreenMargin);
         }
 
+        internal int MeasureDisplayTextHeight(string text, Font font, int width)
+        {
+            return MeasureWrappedTextHeight(text ?? string.Empty, font, Math.Max(1, width));
+        }
+
         private static int MeasureLongestExplicitLineWidth(string text, Font font)
         {
             string[] lines = NormalizeLines(text);

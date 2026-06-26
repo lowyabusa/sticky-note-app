@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 using JotTile.Core;
 
@@ -14,6 +15,7 @@ namespace JotTile.Config
         private const int AppearanceEditorMinimumWidth = 260;
         private readonly SettingsRepository _settingsRepository;
         private readonly AppLogger _logger;
+        private readonly EventWaitHandle _activateEvent;
         private readonly PreviewNoteControl _previewControl;
         private readonly ComboBox _backgroundStartCombo;
         private readonly ComboBox _backgroundEndCombo;
@@ -38,13 +40,19 @@ namespace JotTile.Config
         private readonly ComboBox _exitUnsavedActionCombo;
         private readonly CheckBox _launchAtSignInCheckBox;
         private readonly Label _statusLabel;
+        private readonly Control _uiInvoker;
         private AppSettings _settings;
+        private Thread? _activateWatchThread;
+        private bool _isShuttingDown;
 
         internal ConfigForm()
         {
             _settingsRepository = new SettingsRepository();
             _logger = new AppLogger();
             _settings = _settingsRepository.Load().Value;
+            _uiInvoker = new Control();
+            _uiInvoker.CreateControl();
+            _activateEvent = new EventWaitHandle(false, EventResetMode.AutoReset, AppIdentity.ConfigActivateEventName);
 
             Text = "JotTile Settings";
             StartPosition = FormStartPosition.CenterScreen;
@@ -141,6 +149,83 @@ namespace JotTile.Config
             WirePreviewRefresh();
             BindSettingsToUi();
             UpdatePreview();
+            FormClosed += HandleFormClosed;
+            StartActivateWatcher();
+        }
+
+        private void StartActivateWatcher()
+        {
+            _activateWatchThread = new Thread(WatchActivateSignals);
+            _activateWatchThread.IsBackground = true;
+            _activateWatchThread.Start();
+        }
+
+        private void WatchActivateSignals()
+        {
+            while (!_isShuttingDown)
+            {
+                _activateEvent.WaitOne();
+                if (_isShuttingDown)
+                {
+                    return;
+                }
+
+                if (!TryQueueUiCallback(_uiInvoker, (MethodInvoker)WakeFromSignal, "config-activate"))
+                {
+                    return;
+                }
+            }
+        }
+
+        private void WakeFromSignal()
+        {
+            if (WindowState == FormWindowState.Minimized)
+            {
+                WindowState = FormWindowState.Normal;
+            }
+
+            Show();
+            Activate();
+            NativeMethods.ShowWindow(Handle, NativeMethods.SwRestore);
+            NativeMethods.SetForegroundWindow(Handle);
+        }
+
+        private void HandleFormClosed(object? sender, FormClosedEventArgs e)
+        {
+            _isShuttingDown = true;
+            _activateEvent.Set();
+            if (_activateWatchThread != null)
+            {
+                try
+                {
+                    _activateWatchThread.Join(1000);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning("config-activate-join", "Joining the config activation watcher failed.", ex);
+                }
+            }
+
+            _activateEvent.Dispose();
+            _uiInvoker.Dispose();
+        }
+
+        private bool TryQueueUiCallback(Control uiInvoker, MethodInvoker callback, string operation)
+        {
+            try
+            {
+                uiInvoker.BeginInvoke(callback);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!_isShuttingDown)
+                {
+                    _logger.Warning(operation, "Dispatching work to the UI thread failed.", ex);
+                }
+
+                return false;
+            }
         }
 
         private TabPage CreateAppearanceTab()

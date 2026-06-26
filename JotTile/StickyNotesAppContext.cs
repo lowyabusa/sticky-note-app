@@ -90,8 +90,8 @@ namespace JotTile
             }
             finally
             {
-                JoinThread(_launchWatchThread);
-                JoinThread(_settingsWatchThread);
+                JoinThread("watch-external-launch-join", _launchWatchThread);
+                JoinThread("watch-settings-join", _settingsWatchThread);
                 _createNoteEvent.Dispose();
                 _settingsChangedEvent.Dispose();
                 _notifyIcon.Dispose();
@@ -164,9 +164,11 @@ namespace JotTile
 
         private void OpenExistingNotes()
         {
+            Rectangle fallbackWorkingArea = NoteWindowPlacement.GetPrimaryWorkingArea();
+            Rectangle[] workingAreas = NoteWindowPlacement.GetWorkingAreas();
             foreach (NoteRecord note in _notes.ToList())
             {
-                NormalizeNote(note);
+                NoteWindowPlacement.NormalizeLoadedNote(note, fallbackWorkingArea, workingAreas);
                 OpenNote(note, false);
             }
         }
@@ -210,11 +212,7 @@ namespace JotTile
                     return;
                 }
 
-                try
-                {
-                    _uiInvoker.BeginInvoke((MethodInvoker)HandleExternalLaunch);
-                }
-                catch
+                if (!TryQueueUiCallback(_uiInvoker, (MethodInvoker)HandleExternalLaunch, _logger, "watch-external-launch", _isShuttingDown))
                 {
                     return;
                 }
@@ -231,11 +229,7 @@ namespace JotTile
                     return;
                 }
 
-                try
-                {
-                    _uiInvoker.BeginInvoke((MethodInvoker)ReloadSettings);
-                }
-                catch
+                if (!TryQueueUiCallback(_uiInvoker, (MethodInvoker)ReloadSettings, _logger, "watch-settings", _isShuttingDown))
                 {
                     return;
                 }
@@ -353,6 +347,7 @@ namespace JotTile
             form.FormClosed += HandleFormClosed;
             _formsById[note.Id] = form;
             form.Show();
+            form.EnsureVisibleOnCurrentScreens();
 
             if (requestForeground || !note.IsSaved)
             {
@@ -551,24 +546,18 @@ namespace JotTile
 
         private NoteRecord CreateNewDraftNote()
         {
-            Rectangle workingArea = Screen.PrimaryScreen != null
-                ? Screen.PrimaryScreen.WorkingArea
-                : Screen.AllScreens[0].WorkingArea;
-            int offset = _notes.Count * 24;
-            int width = 260;
-            int height = 160;
-            int x = Math.Max(workingArea.Left + 20, workingArea.Left + 80 + offset);
-            int y = Math.Max(workingArea.Top + 20, workingArea.Top + 80 + offset);
+            Rectangle workingArea = NoteWindowPlacement.GetPrimaryWorkingArea();
+            Rectangle bounds = NoteWindowPlacement.CreateNewNoteBounds(workingArea, _notes.Count, new Size(260, 160));
             string timestamp = DateTime.UtcNow.ToString("o");
 
             return new NoteRecord
             {
                 Id = Guid.NewGuid().ToString("N"),
                 Text = string.Empty,
-                X = x,
-                Y = y,
-                Width = width,
-                Height = height,
+                X = bounds.X,
+                Y = bounds.Y,
+                Width = bounds.Width,
+                Height = bounds.Height,
                 CreatedAt = timestamp,
                 UpdatedAt = timestamp,
                 IsSaved = false
@@ -587,40 +576,7 @@ namespace JotTile
             target.UpdatedAt = snapshot.UpdatedAt;
         }
 
-        private static void NormalizeNote(NoteRecord note)
-        {
-            if (string.IsNullOrWhiteSpace(note.Id))
-            {
-                note.Id = Guid.NewGuid().ToString("N");
-            }
-
-            if (string.IsNullOrWhiteSpace(note.Text))
-            {
-                note.Text = string.Empty;
-            }
-
-            if (string.IsNullOrWhiteSpace(note.CreatedAt))
-            {
-                note.CreatedAt = DateTime.UtcNow.ToString("o");
-            }
-
-            if (string.IsNullOrWhiteSpace(note.UpdatedAt))
-            {
-                note.UpdatedAt = note.CreatedAt;
-            }
-
-            if (note.Width < 160)
-            {
-                note.Width = 160;
-            }
-
-            if (note.Height < 90)
-            {
-                note.Height = 90;
-            }
-        }
-
-        private static void JoinThread(Thread? thread)
+        private void JoinThread(string operation, Thread? thread)
         {
             if (thread == null)
             {
@@ -629,10 +585,32 @@ namespace JotTile
 
             try
             {
-                thread.Join(1000);
+                if (!thread.Join(1000))
+                {
+                    _logger.Warning(operation, "A background watcher thread did not stop within the join timeout.");
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.Warning(operation, "Joining a background watcher thread failed.", ex);
+            }
+        }
+
+        internal static bool TryQueueUiCallback(Control uiInvoker, MethodInvoker callback, AppLogger logger, string operation, bool isShuttingDown)
+        {
+            try
+            {
+                uiInvoker.BeginInvoke(callback);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!isShuttingDown)
+                {
+                    logger.Warning(operation, "Dispatching work to the UI thread failed.", ex);
+                }
+
+                return false;
             }
         }
 

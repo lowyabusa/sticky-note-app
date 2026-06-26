@@ -12,7 +12,7 @@ Double-click `build.cmd` or run:
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-The script restores the solution, publishes `JotTile.exe` and `config.exe` as self-contained `win-x64` single-file executables, optionally creates a desktop shortcut, and places the uninstall launcher into `app\`.
+The script is looking for restoreable notes inside the repository folder, publishes `JotTile.exe` and `config.exe` as self-contained `win-x64` single-file executables, optionally creates a desktop shortcut, and places the uninstall launcher into `app\`.
 
 Published output:
 
@@ -24,7 +24,7 @@ app\Uninstall JotTile.cmd
 
 ## Main Workflow
 
-Generate a new note via the /app/JotTile.exe
+Create a new note via the /app/JotTile.exe
 or at the Windows dropdown tray with right click.
 
 ![Create a new note](JotTile/Assets/addNote.png)
@@ -33,15 +33,15 @@ or at the Windows dropdown tray with right click.
 - `Enter` inserts a line break for text formation.
 - `Ctrl+S` or the Save button commits text and note size atomically.
 - After a successful save, the note switches to `Saved` and auto-resizes to fit the committed text.
-- `F2` re-enters editing with the last committed text.
+- `F2` or the edit button re-enters editing.
 - `Ctrl+C` copies the full saved note only in `Saved` mode.
 - `Ctrl+W` follows the same close path as the Close button. By default it deletes the note instantly.
 
 ## Tray Behavior
 
-The app owns a tray icon as seen above.
+The app owns a tray icon as seen above. `Exit` closes the App and the tray icon.
 
-Closing or deleting the last visible note does not terminate the app. JotTile can stay alive with zero open note windows and still respond from the tray.
+Closing or deleting the last visible note does not terminate the app. JotTile can stay alive with zero open note windows and still respond from the tray unless you closed the app.
 
 ## Settings
 

@@ -90,6 +90,11 @@ namespace JotTile
             get { return _interaction.CommittedText; }
         }
 
+        internal RichTextBox SavedTextView
+        {
+            get { return _savedTextView; }
+        }
+
         internal void FocusEditingSurface(bool requestForeground)
         {
             if (!Visible)
@@ -120,6 +125,7 @@ namespace JotTile
                 Show();
             }
 
+            EnsureVisibleOnCurrentScreens();
             NativeMethods.ShowWindow(Handle, NativeMethods.SwRestore);
             Activate();
             NativeMethods.SetForegroundWindow(Handle);
@@ -142,6 +148,22 @@ namespace JotTile
             _allowClose = true;
             _boundsPersistTimer.Stop();
             _copyFeedbackTimer.Stop();
+        }
+
+        internal void EnsureVisibleOnCurrentScreens()
+        {
+            Rectangle correctedBounds = NoteWindowPlacement.ClampToVisibleArea(
+                Bounds,
+                NoteWindowPlacement.GetPrimaryWorkingArea(),
+                NoteWindowPlacement.GetWorkingAreas());
+
+            if (correctedBounds == Bounds)
+            {
+                return;
+            }
+
+            ApplySavedBounds(correctedBounds);
+            PersistBounds();
         }
 
         internal void ApplySettings(AppSettings settings, bool relayoutSavedNote)
@@ -227,10 +249,24 @@ namespace JotTile
             PaintNoteBackground(e.Graphics);
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_noteFont != null)
+                {
+                    _noteFont.Dispose();
+                    _noteFont = null;
+                }
+            }
+
+            base.Dispose(disposing);
+        }
+
         private void InitializeStateFromNote()
         {
             _inputBox.Text = _interaction.EditorText;
-            _displayLabel.Text = PrepareSavedDisplayText(_interaction.CommittedText);
+            UpdateSavedTextPresentation();
             ApplyInteractionUi();
 
             if (_interaction.Mode == NoteInteractionMode.Editing)
@@ -352,7 +388,7 @@ namespace JotTile
                 return;
             }
 
-            _displayLabel.Text = PrepareSavedDisplayText(_interaction.CommittedText);
+            UpdateSavedTextPresentation();
             ApplySavedBounds(targetBounds);
             ApplyInteractionUi();
         }
@@ -410,9 +446,11 @@ namespace JotTile
 
         private Rectangle CalculateTargetBounds(string text)
         {
-            Font noteFont = CreateNoteFont();
             Rectangle workingArea = Screen.FromControl(this).WorkingArea;
-            return _layoutCalculator.CalculateBounds(text, Bounds, noteFont, workingArea, CreateLayoutMetrics());
+            using (Font noteFont = CreateNoteFont())
+            {
+                return _layoutCalculator.CalculateBounds(text, Bounds, noteFont, workingArea, CreateLayoutMetrics());
+            }
         }
 
         private NoteLayoutMetrics CreateLayoutMetrics()
@@ -441,11 +479,10 @@ namespace JotTile
                 return;
             }
 
-            Note.X = Left;
-            Note.Y = Top;
-            Note.Width = Width;
-            Note.Height = Height;
-            _boundsPersistRequested(Note, Bounds);
+            if (!_boundsPersistRequested(Note, Bounds))
+            {
+                ApplySavedBounds(new Rectangle(Note.X, Note.Y, Note.Width, Note.Height));
+            }
         }
 
         private void ApplyInteractionUi()
@@ -453,8 +490,8 @@ namespace JotTile
             bool isEditing = _interaction.Mode == NoteInteractionMode.Editing;
 
             _inputBox.Visible = isEditing;
-            _displayLabel.Visible = !isEditing;
-            _displayLabel.Text = PrepareSavedDisplayText(_interaction.CommittedText);
+            _savedTextView.Visible = !isEditing;
+            UpdateSavedTextPresentation();
             _copyButton.CommandEnabled = !isEditing;
             _editSaveButton.Glyph = isEditing ? NoteButtonGlyph.Save : NoteButtonGlyph.Edit;
 
@@ -472,6 +509,37 @@ namespace JotTile
             _editSaveButton.Invalidate();
             _copyButton.Invalidate();
             _closeButton.Invalidate();
+        }
+
+        private void UpdateSavedTextPresentation()
+        {
+            string displayText = PrepareSavedDisplayText(_interaction.CommittedText);
+            if (!string.Equals(_savedTextView.Text, displayText, StringComparison.Ordinal))
+            {
+                _savedTextView.Text = displayText;
+            }
+
+            UpdateSavedTextScrollState();
+        }
+
+        private void UpdateSavedTextScrollState()
+        {
+            if (_noteFont == null || _savedTextView.IsDisposed)
+            {
+                return;
+            }
+
+            int viewportWidth = Math.Max(1, _savedTextView.ClientSize.Width);
+            int viewportHeight = Math.Max(1, _savedTextView.ClientSize.Height);
+            int textHeight = _layoutCalculator.MeasureDisplayTextHeight(_savedTextView.Text, _noteFont, viewportWidth);
+            RichTextBoxScrollBars targetScrollBars = textHeight > viewportHeight
+                ? RichTextBoxScrollBars.Vertical
+                : RichTextBoxScrollBars.None;
+
+            if (_savedTextView.ScrollBars != targetScrollBars)
+            {
+                _savedTextView.ScrollBars = targetScrollBars;
+            }
         }
 
         private void QueueEditorFocus()

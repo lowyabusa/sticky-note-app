@@ -1,5 +1,7 @@
 using System;
+using System.Threading;
 using System.Windows.Forms;
+using JotTile.Core;
 
 namespace JotTile.Config
 {
@@ -8,9 +10,20 @@ namespace JotTile.Config
         [STAThread]
         private static void Main()
         {
+            bool createdNew;
+            Mutex mutex = new Mutex(true, AppIdentity.ConfigMutexName, out createdNew);
+            if (!createdNew)
+            {
+                AppSignals.TryRaise(AppIdentity.ConfigActivateEventName);
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new ConfigForm());
+            using (mutex)
+            {
+                Application.Run(new ConfigForm());
+            }
         }
     }
 }

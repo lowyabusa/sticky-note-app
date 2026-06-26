@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using JotTile.Core;
 
 namespace JotTile.Tests
@@ -29,6 +30,22 @@ namespace JotTile.Tests
         internal AppLogger CreateLogger()
         {
             return new AppLogger(CreateSubdirectory("logs"));
+        }
+
+        internal string ReadLog()
+        {
+            string logPath = Path.Combine(_rootPath, "logs", "app.log");
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                if (File.Exists(logPath))
+                {
+                    return File.ReadAllText(logPath);
+                }
+
+                Thread.Sleep(25);
+            }
+
+            return string.Empty;
         }
 
         public void Dispose()

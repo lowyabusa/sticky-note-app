@@ -57,7 +57,7 @@ namespace JotTile.Core
         public NoteCloseAction CloseAction { get; set; } = NoteCloseAction.Delete;
 
         [DataMember(Name = "deleteRequiresConfirmation", Order = 17)]
-        public bool DeleteRequiresConfirmation { get; set; } = true;
+        public bool DeleteRequiresConfirmation { get; set; } = false;
 
         [DataMember(Name = "exitRequiresConfirmation", Order = 18)]
         public bool ExitRequiresConfirmation { get; set; } = false;

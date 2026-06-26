@@ -7,15 +7,22 @@ namespace JotTile.Core
     {
         internal static void Raise(string eventName)
         {
+            TryRaise(eventName);
+        }
+
+        internal static bool TryRaise(string eventName)
+        {
             EventWaitHandle? waitHandle = null;
 
             try
             {
                 waitHandle = EventWaitHandle.OpenExisting(eventName);
                 waitHandle.Set();
+                return true;
             }
             catch (WaitHandleCannotBeOpenedException)
             {
+                return false;
             }
             finally
             {

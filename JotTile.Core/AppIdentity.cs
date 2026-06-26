@@ -16,6 +16,8 @@ namespace JotTile.Core
         internal const string SettingsChangedEventName = @"Local\JotTile.SettingsChanged";
         internal const string CreateNoteEventName = @"Local\JotTile.CreateNote";
         internal const string AppMutexName = @"Local\JotTile.App";
+        internal const string ConfigMutexName = @"Local\JotTile.Config";
+        internal const string ConfigActivateEventName = @"Local\JotTile.ConfigActivate";
         internal const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
         internal const string RunValueName = "JotTile";
         internal const string LegacyRunValueName = "SimpleStickyNotes";
