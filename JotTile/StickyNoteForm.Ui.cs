@@ -242,10 +242,10 @@ namespace JotTile
         {
             return new NoteSurfaceLayoutMetrics
             {
-                HeaderTop = 10,
-                HeaderButtonSize = 24,
-                HeaderButtonSpacing = 6,
-                HeaderRightMargin = 10,
+                HeaderTop = 5,
+                HeaderButtonSize = 17,
+                HeaderButtonSpacing = 3,
+                HeaderRightMargin = 5,
                 HeaderBottomGap = 8,
                 ContentSidePadding = 10,
                 ContentBottomPadding = 8,

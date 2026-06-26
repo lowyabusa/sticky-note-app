@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -112,9 +113,12 @@ namespace JotTile.Core
 
         private static void DrawGlyph(Graphics graphics, NoteButtonGlyph glyph, Rectangle bounds, Color lineColor)
         {
-            Rectangle inner = Rectangle.Inflate(bounds, -4, -4);
+            float scale = Math.Min(bounds.Width, bounds.Height);
+            float inset = Math.Max(2f, scale * 0.18f);
+            RectangleF inner = RectangleF.Inflate(bounds, -inset, -inset);
+            float strokeWidth = Math.Max(1.25f, scale * 0.1f);
 
-            using (Pen pen = new Pen(lineColor, 1.6f))
+            using (Pen pen = new Pen(lineColor, strokeWidth))
             using (SolidBrush brush = new SolidBrush(lineColor))
             {
                 pen.StartCap = LineCap.Round;
@@ -127,14 +131,10 @@ namespace JotTile.Core
                         DrawEditGlyph(graphics, pen, brush, inner);
                         break;
                     case NoteButtonGlyph.Save:
-                        graphics.DrawRectangle(pen, inner.Left + 1, inner.Top, 10, 11);
-                        graphics.DrawLine(pen, inner.Left + 4, inner.Top, inner.Left + 4, inner.Top + 5);
-                        graphics.DrawLine(pen, inner.Left + 4, inner.Top + 5, inner.Left + 9, inner.Top + 5);
-                        graphics.DrawRectangle(pen, inner.Left + 4, inner.Top + 8, 5, 3);
+                        DrawSaveGlyph(graphics, pen, inner);
                         break;
                     case NoteButtonGlyph.Copy:
-                        graphics.DrawRectangle(pen, inner.Left + 4, inner.Top + 1, 7, 9);
-                        graphics.DrawRectangle(pen, inner.Left + 1, inner.Top + 4, 7, 9);
+                        DrawCopyGlyph(graphics, pen, inner);
                         break;
                     case NoteButtonGlyph.Close:
                         graphics.DrawLine(pen, inner.Left + 1, inner.Top + 1, inner.Right - 1, inner.Bottom - 1);
@@ -144,29 +144,29 @@ namespace JotTile.Core
             }
         }
 
-        private static void DrawEditGlyph(Graphics graphics, Pen pen, SolidBrush brush, Rectangle inner)
+        private static void DrawEditGlyph(Graphics graphics, Pen pen, SolidBrush brush, RectangleF inner)
         {
-            Point[] body =
+            PointF[] body =
             {
-                new Point(inner.Left + 2, inner.Bottom - 1),
-                new Point(inner.Left + 4, inner.Bottom + 1),
-                new Point(inner.Right - 1, inner.Top + 6),
-                new Point(inner.Right - 3, inner.Top + 4)
+                new PointF(inner.Left + (inner.Width * 0.12f), inner.Bottom - (inner.Height * 0.12f)),
+                new PointF(inner.Left + (inner.Width * 0.28f), inner.Bottom + (inner.Height * 0.04f)),
+                new PointF(inner.Right - (inner.Width * 0.10f), inner.Top + (inner.Height * 0.26f)),
+                new PointF(inner.Right - (inner.Width * 0.26f), inner.Top + (inner.Height * 0.10f))
             };
 
-            Point[] eraser =
+            PointF[] eraser =
             {
-                new Point(inner.Left + 1, inner.Bottom - 3),
-                new Point(inner.Left + 3, inner.Bottom - 1),
-                new Point(inner.Right - 3, inner.Top + 4),
-                new Point(inner.Right - 5, inner.Top + 2)
+                new PointF(inner.Left + (inner.Width * 0.04f), inner.Bottom - (inner.Height * 0.28f)),
+                new PointF(inner.Left + (inner.Width * 0.20f), inner.Bottom - (inner.Height * 0.12f)),
+                new PointF(inner.Right - (inner.Width * 0.26f), inner.Top + (inner.Height * 0.10f)),
+                new PointF(inner.Right - (inner.Width * 0.42f), inner.Top - (inner.Height * 0.06f))
             };
 
-            Point[] tip =
+            PointF[] tip =
             {
-                new Point(inner.Right - 1, inner.Top + 6),
-                new Point(inner.Right + 1, inner.Top + 4),
-                new Point(inner.Right, inner.Top + 7)
+                new PointF(inner.Right - (inner.Width * 0.10f), inner.Top + (inner.Height * 0.26f)),
+                new PointF(inner.Right + (inner.Width * 0.04f), inner.Top + (inner.Height * 0.12f)),
+                new PointF(inner.Right - (inner.Width * 0.02f), inner.Top + (inner.Height * 0.34f))
             };
 
             graphics.FillPolygon(brush, eraser);
@@ -176,7 +176,59 @@ namespace JotTile.Core
             graphics.DrawPolygon(pen, eraser);
             graphics.DrawPolygon(pen, body);
             graphics.DrawPolygon(pen, tip);
-            graphics.DrawLine(pen, inner.Left + 2, inner.Bottom - 1, inner.Left, inner.Bottom + 1);
+            graphics.DrawLine(
+                pen,
+                inner.Left + (inner.Width * 0.12f),
+                inner.Bottom - (inner.Height * 0.12f),
+                inner.Left - (inner.Width * 0.02f),
+                inner.Bottom + (inner.Height * 0.04f));
+        }
+
+        private static void DrawSaveGlyph(Graphics graphics, Pen pen, RectangleF inner)
+        {
+            float bodyWidth = inner.Width * 0.86f;
+            float bodyHeight = inner.Height * 0.9f;
+            RectangleF body = new RectangleF(
+                inner.Left + ((inner.Width - bodyWidth) / 2f),
+                inner.Top + ((inner.Height - bodyHeight) / 2f),
+                bodyWidth,
+                bodyHeight);
+
+            graphics.DrawRectangle(pen, body.X, body.Y, body.Width, body.Height);
+
+            float notchX = body.Left + (body.Width * 0.3f);
+            float notchBottom = body.Top + (body.Height * 0.48f);
+            graphics.DrawLine(pen, notchX, body.Top, notchX, notchBottom);
+            graphics.DrawLine(pen, notchX, notchBottom, body.Right - (body.Width * 0.16f), notchBottom);
+
+            RectangleF label = new RectangleF(
+                body.Left + (body.Width * 0.26f),
+                body.Bottom - (body.Height * 0.3f),
+                body.Width * 0.42f,
+                body.Height * 0.18f);
+
+            graphics.DrawRectangle(pen, label.X, label.Y, label.Width, label.Height);
+        }
+
+        private static void DrawCopyGlyph(Graphics graphics, Pen pen, RectangleF inner)
+        {
+            float rectWidth = inner.Width * 0.62f;
+            float rectHeight = inner.Height * 0.72f;
+            float offsetX = inner.Width * 0.14f;
+            float offsetY = inner.Height * 0.14f;
+            RectangleF back = new RectangleF(
+                inner.Left + offsetX,
+                inner.Top + offsetY,
+                rectWidth,
+                rectHeight);
+            RectangleF front = new RectangleF(
+                back.Left + (inner.Width * 0.18f),
+                back.Top - (inner.Height * 0.08f),
+                rectWidth,
+                rectHeight);
+
+            graphics.DrawRectangle(pen, back.X, back.Y, back.Width, back.Height);
+            graphics.DrawRectangle(pen, front.X, front.Y, front.Width, front.Height);
         }
 
         private static GraphicsPath CreateRoundedRectangle(Rectangle bounds, int radius)

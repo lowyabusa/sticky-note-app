@@ -51,7 +51,7 @@ namespace JotTile.Core
         public string NoteFontFamily { get; set; } = "Segoe UI";
 
         [DataMember(Name = "noteFontSize", Order = 15)]
-        public float NoteFontSize { get; set; } = 10.0f;
+        public float NoteFontSize { get; set; } = 11.5f;
 
         [DataMember(Name = "closeAction", Order = 16)]
         public NoteCloseAction CloseAction { get; set; } = NoteCloseAction.Delete;
