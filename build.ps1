@@ -143,18 +143,39 @@ function Get-DesktopDirectory {
     return [Environment]::GetFolderPath("DesktopDirectory")
 }
 
+function Show-SetupDialog {
+    param(
+        [string]$Message,
+        [string]$Title,
+        [System.Windows.Forms.MessageBoxButtons]$Buttons,
+        [System.Windows.Forms.MessageBoxIcon]$Icon,
+        [switch]$UseInstallSound
+    )
+
+    if ($UseInstallSound) {
+        [System.Media.SystemSounds]::Asterisk.Play()
+    }
+
+    return [System.Windows.Forms.MessageBox]::Show(
+        $Message,
+        $Title,
+        $Buttons,
+        $Icon
+    )
+}
+
 function Show-YesNoDialog {
     param(
         [string]$Message,
         [string]$Title
     )
 
-    $result = [System.Windows.Forms.MessageBox]::Show(
-        $Message,
-        $Title,
-        [System.Windows.Forms.MessageBoxButtons]::YesNo,
-        [System.Windows.Forms.MessageBoxIcon]::Question
-    )
+    $result = Show-SetupDialog `
+        -Message $Message `
+        -Title $Title `
+        -Buttons ([System.Windows.Forms.MessageBoxButtons]::YesNo) `
+        -Icon ([System.Windows.Forms.MessageBoxIcon]::Question) `
+        -UseInstallSound
 
     return $result -eq [System.Windows.Forms.DialogResult]::Yes
 }
@@ -165,12 +186,12 @@ function Show-InfoDialog {
         [string]$Title
     )
 
-    [System.Windows.Forms.MessageBox]::Show(
-        $Message,
-        $Title,
-        [System.Windows.Forms.MessageBoxButtons]::OK,
-        [System.Windows.Forms.MessageBoxIcon]::Information
-    ) | Out-Null
+    Show-SetupDialog `
+        -Message $Message `
+        -Title $Title `
+        -Buttons ([System.Windows.Forms.MessageBoxButtons]::OK) `
+        -Icon ([System.Windows.Forms.MessageBoxIcon]::Information) `
+        -UseInstallSound | Out-Null
 }
 
 function Should-CreateDesktopShortcut {
