@@ -6,6 +6,8 @@ namespace JotTile.Core
     {
         internal static readonly IReadOnlyList<NamedValue> ColorChoices = new[]
         {
+            new NamedValue("Black", "#000000"),
+            new NamedValue("White", "#FFFFFF"),
             new NamedValue("Amber", "#FFD768"),
             new NamedValue("Sun", "#FFE06D"),
             new NamedValue("Honey", "#FFF7AB"),

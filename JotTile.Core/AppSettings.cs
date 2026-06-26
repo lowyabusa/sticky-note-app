@@ -39,13 +39,13 @@ namespace JotTile.Core
         public int OuterStrokeThickness { get; set; } = 1;
 
         [DataMember(Name = "buttonColor", Order = 11)]
-        public string ButtonColor { get; set; } = "#FFD768";
+        public string ButtonColor { get; set; } = "#D9D9D9";
 
         [DataMember(Name = "buttonHoverColor", Order = 12)]
-        public string ButtonHoverColor { get; set; } = "#FFE48C";
+        public string ButtonHoverColor { get; set; } = "#ECECEC";
 
         [DataMember(Name = "buttonDisabledColor", Order = 13)]
-        public string ButtonDisabledColor { get; set; } = "#F4D992";
+        public string ButtonDisabledColor { get; set; } = "#686868";
 
         [DataMember(Name = "noteFontFamily", Order = 14)]
         public string NoteFontFamily { get; set; } = "Segoe UI";
@@ -113,6 +113,20 @@ namespace JotTile.Core
         internal static AppSettings CreateDefault()
         {
             return new AppSettings();
+        }
+
+        internal ButtonRenderMode GetButtonRenderMode()
+        {
+            AppSettings defaults = CreateDefault();
+
+            if (string.Equals(ButtonColor, defaults.ButtonColor, System.StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(ButtonHoverColor, defaults.ButtonHoverColor, System.StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(ButtonDisabledColor, defaults.ButtonDisabledColor, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return ButtonRenderMode.SystemDefault;
+            }
+
+            return ButtonRenderMode.CustomOverride;
         }
 
         private static string NormalizeText(string value, string fallback)

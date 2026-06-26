@@ -23,23 +23,20 @@ namespace JotTile
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
             MinimumSize = new Size(160, 90);
-            Padding = new Padding(12, 42, 12, 12);
             Font = new Font("Segoe UI", 9.5f, FontStyle.Regular, GraphicsUnit.Point);
 
             _editSaveButton = new NoteIconButton();
-            _editSaveButton.Location = new Point(Width - 88, 10);
             _editSaveButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             _editSaveButton.CommandClick += HandleEditSaveClicked;
 
             _copyButton = new NoteIconButton();
             _copyButton.Glyph = NoteButtonGlyph.Copy;
-            _copyButton.Location = new Point(Width - 58, 10);
             _copyButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             _copyButton.CommandClick += HandleCopyClicked;
 
             _closeButton = new NoteIconButton();
             _closeButton.Glyph = NoteButtonGlyph.Close;
-            _closeButton.Location = new Point(Width - 28, 10);
+            _closeButton.IsDangerButton = true;
             _closeButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             _closeButton.CommandClick += HandleCloseClicked;
 
@@ -50,17 +47,15 @@ namespace JotTile
             _inputBox.AcceptsTab = false;
             _inputBox.WordWrap = true;
             _inputBox.ScrollBars = ScrollBars.Vertical;
-            _inputBox.Dock = DockStyle.Fill;
             _inputBox.TextChanged += HandleEditorTextChanged;
             _inputBox.MouseDown += HandleDragMouseDown;
 
             _displayLabel = new Label();
-            _displayLabel.Dock = DockStyle.Fill;
             _displayLabel.AutoSize = false;
             _displayLabel.UseMnemonic = false;
             _displayLabel.TextAlign = ContentAlignment.TopLeft;
             _displayLabel.BackColor = Color.Transparent;
-            _displayLabel.Padding = new Padding(2);
+            _displayLabel.Padding = Padding.Empty;
             _displayLabel.MouseDown += HandleDragMouseDown;
 
             _copyFeedbackLabel = new Label();
@@ -77,6 +72,9 @@ namespace JotTile
             Controls.Add(_editSaveButton);
             Controls.Add(_copyButton);
             Controls.Add(_closeButton);
+
+            Layout += HandleHeaderLayoutChanged;
+            UpdateNoteSurfaceLayout();
         }
 
         private void ApplyPaletteToControls()
@@ -84,9 +82,10 @@ namespace JotTile
             Color backgroundStart = ColorUtilities.Parse(_settings.BackgroundColorStart, Color.FromArgb(255, 247, 171));
             Color backgroundEnd = ColorUtilities.Parse(_settings.BackgroundColorEnd, Color.FromArgb(255, 224, 109));
             Color textColor = ColorUtilities.Parse(_settings.TextColor, Color.FromArgb(68, 54, 0));
-            Color buttonColor = ColorUtilities.Parse(_settings.ButtonColor, Color.FromArgb(255, 215, 104));
-            Color buttonHoverColor = ColorUtilities.Parse(_settings.ButtonHoverColor, Color.FromArgb(255, 228, 140));
-            Color buttonDisabledColor = ColorUtilities.Parse(_settings.ButtonDisabledColor, Color.FromArgb(244, 217, 146));
+            Color buttonColor = ColorUtilities.Parse(_settings.ButtonColor, Color.FromArgb(217, 217, 217));
+            Color buttonHoverColor = ColorUtilities.Parse(_settings.ButtonHoverColor, Color.FromArgb(236, 236, 236));
+            Color buttonDisabledColor = ColorUtilities.Parse(_settings.ButtonDisabledColor, Color.FromArgb(104, 104, 104));
+            ButtonRenderMode renderMode = _settings.GetButtonRenderMode();
 
             BackColor = backgroundStart;
             ForeColor = textColor;
@@ -99,28 +98,51 @@ namespace JotTile
             _inputBox.BackColor = Blend(backgroundStart, backgroundEnd);
             _displayLabel.BackColor = Color.Transparent;
 
-            ApplyButtonPalette(_editSaveButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor);
-            ApplyButtonPalette(_copyButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor);
-            ApplyButtonPalette(_closeButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor);
+            ApplyButtonPalette(_editSaveButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, renderMode);
+            ApplyButtonPalette(_copyButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, renderMode);
+            ApplyButtonPalette(_closeButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, renderMode);
 
             _copyFeedbackLabel.ForeColor = textColor;
             _copyFeedbackLabel.BackColor = Blend(backgroundStart, buttonHoverColor);
+            UpdateNoteSurfaceLayout();
             Invalidate();
         }
 
-        private static void ApplyButtonPalette(NoteIconButton button, Color buttonColor, Color hoverColor, Color disabledColor, Color textColor)
+        private static void ApplyButtonPalette(NoteIconButton button, Color buttonColor, Color hoverColor, Color disabledColor, Color textColor, ButtonRenderMode renderMode)
         {
             button.ButtonColor = buttonColor;
             button.HoverColor = hoverColor;
             button.DisabledColor = disabledColor;
             button.GlyphColor = textColor;
             button.DisabledGlyphColor = ControlPaint.Dark(disabledColor);
+            button.RenderMode = renderMode;
             button.Invalidate();
         }
 
         private Font CreateNoteFont()
         {
             return new Font(_settings.NoteFontFamily, 10.0f, FontStyle.Regular, GraphicsUnit.Point);
+        }
+
+        private void HandleHeaderLayoutChanged(object? sender, LayoutEventArgs e)
+        {
+            UpdateNoteSurfaceLayout();
+        }
+
+        private void UpdateNoteSurfaceLayout()
+        {
+            NoteSurfaceLayoutMetrics metrics = CreateSurfaceLayoutMetrics();
+            NoteSurfaceLayout layout = NoteSurfaceLayoutCalculator.Calculate(ClientRectangle, _settings, metrics);
+
+            Rectangle closeBounds = NoteSurfaceLayoutCalculator.CreateHeaderButtonBounds(ClientRectangle, _settings, metrics, 0);
+            Rectangle copyBounds = NoteSurfaceLayoutCalculator.CreateHeaderButtonBounds(ClientRectangle, _settings, metrics, 1);
+            Rectangle editBounds = NoteSurfaceLayoutCalculator.CreateHeaderButtonBounds(ClientRectangle, _settings, metrics, 2);
+
+            _closeButton.Bounds = closeBounds;
+            _copyButton.Bounds = copyBounds;
+            _editSaveButton.Bounds = editBounds;
+            _inputBox.Bounds = layout.TextBounds;
+            _displayLabel.Bounds = layout.TextBounds;
         }
 
         private void PaintNoteBackground(Graphics graphics)
@@ -146,19 +168,24 @@ namespace JotTile
                 }
             }
 
-            DrawStroke(graphics, ColorUtilities.Parse(_settings.OuterStrokeColor, Color.FromArgb(154, 125, 25)), _settings.OuterStrokeThickness, 0);
-            DrawStroke(graphics, ColorUtilities.Parse(_settings.FrameColor, Color.FromArgb(201, 171, 48)), _settings.FrameThickness, _settings.OuterStrokeThickness);
-            DrawStroke(graphics, ColorUtilities.Parse(_settings.InnerStrokeColor, Color.FromArgb(255, 243, 196)), _settings.InnerStrokeThickness, _settings.OuterStrokeThickness + _settings.FrameThickness);
+            DrawStroke(graphics, ClientRectangle, ColorUtilities.Parse(_settings.OuterStrokeColor, Color.FromArgb(154, 125, 25)), _settings.OuterStrokeThickness, 0);
+            DrawStroke(graphics, ClientRectangle, ColorUtilities.Parse(_settings.FrameColor, Color.FromArgb(201, 171, 48)), _settings.FrameThickness, _settings.OuterStrokeThickness);
+            DrawStroke(graphics, ClientRectangle, ColorUtilities.Parse(_settings.InnerStrokeColor, Color.FromArgb(255, 243, 196)), _settings.InnerStrokeThickness, _settings.OuterStrokeThickness + _settings.FrameThickness);
         }
 
-        private static void DrawStroke(Graphics graphics, Color color, int thickness, int inset)
+        private static void DrawStroke(Graphics graphics, Rectangle bounds, Color color, int thickness, int inset)
         {
             if (thickness <= 0)
             {
                 return;
             }
 
-            Rectangle rect = new Rectangle(inset, inset, graphics.VisibleClipBounds.Width >= 1 ? (int)graphics.VisibleClipBounds.Width - (2 * inset) - 1 : 0, graphics.VisibleClipBounds.Height >= 1 ? (int)graphics.VisibleClipBounds.Height - (2 * inset) - 1 : 0);
+            Rectangle rect = new Rectangle(
+                bounds.Left + inset,
+                bounds.Top + inset,
+                bounds.Width - (2 * inset) - 1,
+                bounds.Height - (2 * inset) - 1);
+
             if (rect.Width <= 0 || rect.Height <= 0)
             {
                 return;
@@ -191,6 +218,21 @@ namespace JotTile
                 (a.R + b.R) / 2,
                 (a.G + b.G) / 2,
                 (a.B + b.B) / 2);
+        }
+
+        private static NoteSurfaceLayoutMetrics CreateSurfaceLayoutMetrics()
+        {
+            return new NoteSurfaceLayoutMetrics
+            {
+                HeaderTop = 10,
+                HeaderButtonSize = 24,
+                HeaderButtonSpacing = 6,
+                HeaderRightMargin = 10,
+                HeaderBottomGap = 8,
+                ContentSidePadding = 10,
+                ContentBottomPadding = 8,
+                PreviewOuterMargin = 12
+            };
         }
     }
 }

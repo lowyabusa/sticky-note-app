@@ -8,6 +8,10 @@ namespace JotTile.Config
 {
     internal sealed class ConfigForm : Form
     {
+        private const int AppearancePreviewWidthDivisor = 3;
+        private const int AppearancePreviewMinimumWidth = 240;
+        private const int AppearancePreviewFallbackMinimumWidth = 120;
+        private const int AppearanceEditorMinimumWidth = 260;
         private readonly SettingsRepository _settingsRepository;
         private readonly AppLogger _logger;
         private readonly PreviewNoteControl _previewControl;
@@ -135,7 +139,6 @@ namespace JotTile.Config
         private TabPage CreateAppearanceTab()
         {
             TabPage page = new TabPage("Appearance");
-
             TableLayoutPanel layout = CreateEditorGrid();
             AddEditorRow(layout, 0, "Background start", _backgroundStartCombo);
             AddEditorRow(layout, 1, "Background end", _backgroundEndCombo);
@@ -153,15 +156,30 @@ namespace JotTile.Config
             AddEditorRow(layout, 13, "Gradient direction", _gradientDirectionCombo);
             AddEditorRow(layout, 14, "Note font", _fontFamilyCombo);
 
-            SplitContainer split = new SplitContainer();
-            split.Dock = DockStyle.Fill;
-            split.FixedPanel = FixedPanel.Panel2;
-            split.Panel1.Padding = new Padding(12);
-            split.Panel2.Padding = new Padding(12);
-            split.Panel1.Controls.Add(layout);
-            split.Panel2.Controls.Add(_previewControl);
+            TableLayoutPanel appearanceLayout = new TableLayoutPanel();
+            appearanceLayout.Dock = DockStyle.Fill;
+            appearanceLayout.Padding = new Padding(12);
+            appearanceLayout.RowCount = 1;
+            appearanceLayout.ColumnCount = 2;
+            appearanceLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+            appearanceLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+            appearanceLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, AppearancePreviewMinimumWidth));
 
-            page.Controls.Add(split);
+            Panel editorHost = new Panel();
+            editorHost.Dock = DockStyle.Fill;
+            editorHost.Controls.Add(layout);
+
+            Panel previewHost = new Panel();
+            previewHost.Dock = DockStyle.Fill;
+            _previewControl.Dock = DockStyle.Fill;
+            previewHost.Controls.Add(_previewControl);
+
+            appearanceLayout.Controls.Add(editorHost, 0, 0);
+            appearanceLayout.Controls.Add(previewHost, 1, 0);
+            appearanceLayout.Resize += HandleAppearanceLayoutResize;
+            ApplyAppearanceLayout(appearanceLayout);
+
+            page.Controls.Add(appearanceLayout);
             return page;
         }
 
@@ -264,6 +282,18 @@ namespace JotTile.Config
             {
                 checkBoxes[index].CheckedChanged += handler;
             }
+
+            NumericUpDown[] numericEditors =
+            {
+                _frameThickness,
+                _innerStrokeThickness,
+                _outerStrokeThickness
+            };
+
+            for (int index = 0; index < numericEditors.Length; index++)
+            {
+                numericEditors[index].ValueChanged += handler;
+            }
         }
 
         private void HandleApplyClicked(object? sender, EventArgs e)
@@ -364,6 +394,46 @@ namespace JotTile.Config
             _previewControl.ApplySettings(ReadSettingsFromUi());
         }
 
+        private void HandleAppearanceLayoutResize(object? sender, EventArgs e)
+        {
+            TableLayoutPanel? layout = sender as TableLayoutPanel;
+            if (layout == null)
+            {
+                return;
+            }
+
+            ApplyAppearanceLayout(layout);
+        }
+
+        private static void ApplyAppearanceLayout(TableLayoutPanel layout)
+        {
+            int availableWidth = Math.Max(1, layout.ClientSize.Width - layout.Padding.Horizontal);
+            int previewWidth = availableWidth / AppearancePreviewWidthDivisor;
+            if (previewWidth < AppearancePreviewMinimumWidth)
+            {
+                previewWidth = AppearancePreviewMinimumWidth;
+            }
+
+            int maxPreviewWidth = availableWidth - AppearanceEditorMinimumWidth;
+            if (maxPreviewWidth < previewWidth)
+            {
+                previewWidth = maxPreviewWidth;
+            }
+
+            if (previewWidth < AppearancePreviewFallbackMinimumWidth)
+            {
+                previewWidth = AppearancePreviewFallbackMinimumWidth;
+            }
+
+            if (previewWidth >= availableWidth)
+            {
+                previewWidth = Math.Max(1, availableWidth - 1);
+            }
+
+            layout.ColumnStyles[1].SizeType = SizeType.Absolute;
+            layout.ColumnStyles[1].Width = previewWidth;
+        }
+
         private static TableLayoutPanel CreateEditorGrid()
         {
             TableLayoutPanel layout = new TableLayoutPanel();
@@ -428,6 +498,11 @@ namespace JotTile.Config
             if (selected != null)
             {
                 return selected.Value;
+            }
+
+            if (combo.Items.Count > 0 && combo.Items[0] is NamedValue first)
+            {
+                return first.Value;
             }
 
             return AppSettings.CreateDefault().BackgroundColorStart;

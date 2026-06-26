@@ -402,13 +402,14 @@ namespace JotTile
 
         private NoteLayoutMetrics CreateLayoutMetrics()
         {
+            NoteSurfaceLayoutMetrics surfaceMetrics = CreateSurfaceLayoutMetrics();
             return new NoteLayoutMetrics
             {
                 MinimumWindowSize = MinimumSize,
                 MaximumWindowSize = new Size(640, 480),
                 ScreenMargin = 16,
-                HorizontalChrome = Padding.Left + Padding.Right + 8,
-                VerticalChrome = Padding.Top + Padding.Bottom + 18
+                HorizontalChrome = surfaceMetrics.GetHorizontalChrome(_settings),
+                VerticalChrome = surfaceMetrics.GetVerticalChrome(_settings)
             };
         }
 

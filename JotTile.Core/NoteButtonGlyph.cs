@@ -1,4 +1,4 @@
-namespace JotTile
+namespace JotTile.Core
 {
     internal enum NoteButtonGlyph
     {
