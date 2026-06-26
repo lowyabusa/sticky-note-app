@@ -8,6 +8,7 @@ namespace JotTile.Config
 {
     internal sealed class PreviewNoteControl : Control
     {
+        private static readonly Color ActiveHeaderGlyphColor = Color.Black;
         private AppSettings _settings;
 
         internal PreviewNoteControl()
@@ -61,11 +62,11 @@ namespace JotTile.Config
             DrawStroke(e.Graphics, noteBounds, ColorUtilities.Parse(_settings.FrameColor, Color.Goldenrod), _settings.FrameThickness, _settings.OuterStrokeThickness);
             DrawStroke(e.Graphics, noteBounds, ColorUtilities.Parse(_settings.InnerStrokeColor, Color.Beige), _settings.InnerStrokeThickness, _settings.OuterStrokeThickness + _settings.FrameThickness);
 
-            NoteButtonRenderer.RenderButton(e.Graphics, editBounds, NoteButtonGlyph.Edit, renderMode, true, false, false, false, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, ControlPaint.Dark(buttonDisabledColor));
-            NoteButtonRenderer.RenderButton(e.Graphics, copyBounds, NoteButtonGlyph.Copy, renderMode, true, false, false, false, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, ControlPaint.Dark(buttonDisabledColor));
-            NoteButtonRenderer.RenderButton(e.Graphics, closeBounds, NoteButtonGlyph.Close, renderMode, true, false, false, true, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, ControlPaint.Dark(buttonDisabledColor));
+            NoteButtonRenderer.RenderButton(e.Graphics, editBounds, NoteButtonGlyph.Edit, renderMode, true, false, false, false, buttonColor, buttonHoverColor, buttonDisabledColor, ActiveHeaderGlyphColor, ControlPaint.Dark(buttonDisabledColor));
+            NoteButtonRenderer.RenderButton(e.Graphics, copyBounds, NoteButtonGlyph.Copy, renderMode, true, false, false, false, buttonColor, buttonHoverColor, buttonDisabledColor, ActiveHeaderGlyphColor, ControlPaint.Dark(buttonDisabledColor));
+            NoteButtonRenderer.RenderButton(e.Graphics, closeBounds, NoteButtonGlyph.Close, renderMode, true, false, false, true, buttonColor, buttonHoverColor, buttonDisabledColor, ActiveHeaderGlyphColor, ControlPaint.Dark(buttonDisabledColor));
 
-            using (Font font = new Font(_settings.NoteFontFamily, 10.0f, FontStyle.Regular, GraphicsUnit.Point))
+            using (Font font = new Font(_settings.NoteFontFamily, _settings.NoteFontSize, FontStyle.Regular, GraphicsUnit.Point))
             using (SolidBrush textBrush = new SolidBrush(textColor))
             {
                 e.Graphics.DrawString("Sample note" + Environment.NewLine + "Preview text", font, textBrush, layout.TextBounds);

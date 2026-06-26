@@ -50,19 +50,22 @@ namespace JotTile.Core
         [DataMember(Name = "noteFontFamily", Order = 14)]
         public string NoteFontFamily { get; set; } = "Segoe UI";
 
-        [DataMember(Name = "closeAction", Order = 15)]
+        [DataMember(Name = "noteFontSize", Order = 15)]
+        public float NoteFontSize { get; set; } = 10.0f;
+
+        [DataMember(Name = "closeAction", Order = 16)]
         public NoteCloseAction CloseAction { get; set; } = NoteCloseAction.Delete;
 
-        [DataMember(Name = "deleteRequiresConfirmation", Order = 16)]
+        [DataMember(Name = "deleteRequiresConfirmation", Order = 17)]
         public bool DeleteRequiresConfirmation { get; set; } = true;
 
-        [DataMember(Name = "exitRequiresConfirmation", Order = 17)]
+        [DataMember(Name = "exitRequiresConfirmation", Order = 18)]
         public bool ExitRequiresConfirmation { get; set; } = false;
 
-        [DataMember(Name = "exitUnsavedAction", Order = 18)]
+        [DataMember(Name = "exitUnsavedAction", Order = 19)]
         public ExitUnsavedAction ExitUnsavedAction { get; set; } = ExitUnsavedAction.Discard;
 
-        [DataMember(Name = "launchAtSignIn", Order = 19)]
+        [DataMember(Name = "launchAtSignIn", Order = 20)]
         public bool LaunchAtSignIn { get; set; } = true;
 
         internal AppSettings Clone()
@@ -84,6 +87,7 @@ namespace JotTile.Core
                 ButtonHoverColor = ButtonHoverColor,
                 ButtonDisabledColor = ButtonDisabledColor,
                 NoteFontFamily = NoteFontFamily,
+                NoteFontSize = NoteFontSize,
                 CloseAction = CloseAction,
                 DeleteRequiresConfirmation = DeleteRequiresConfirmation,
                 ExitRequiresConfirmation = ExitRequiresConfirmation,
@@ -105,6 +109,7 @@ namespace JotTile.Core
             ButtonHoverColor = NormalizeText(ButtonHoverColor, defaults.ButtonHoverColor);
             ButtonDisabledColor = NormalizeText(ButtonDisabledColor, defaults.ButtonDisabledColor);
             NoteFontFamily = NormalizeText(NoteFontFamily, defaults.NoteFontFamily);
+            NoteFontSize = NormalizeFloat(NoteFontSize, 8.0f, 24.0f, defaults.NoteFontSize);
             FrameThickness = NormalizeInt(FrameThickness, 1, 6, defaults.FrameThickness);
             InnerStrokeThickness = NormalizeInt(InnerStrokeThickness, 0, 6, defaults.InnerStrokeThickness);
             OuterStrokeThickness = NormalizeInt(OuterStrokeThickness, 0, 6, defaults.OuterStrokeThickness);
@@ -135,6 +140,16 @@ namespace JotTile.Core
         }
 
         private static int NormalizeInt(int value, int minValue, int maxValue, int fallback)
+        {
+            if (value < minValue || value > maxValue)
+            {
+                return fallback;
+            }
+
+            return value;
+        }
+
+        private static float NormalizeFloat(float value, float minValue, float maxValue, float fallback)
         {
             if (value < minValue || value > maxValue)
             {

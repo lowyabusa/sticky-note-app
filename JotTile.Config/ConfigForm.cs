@@ -30,6 +30,8 @@ namespace JotTile.Config
         private readonly CheckBox _useGradientCheckBox;
         private readonly ComboBox _gradientDirectionCombo;
         private readonly ComboBox _fontFamilyCombo;
+        private readonly NumericUpDown _fontSizeEditor;
+        private readonly Button _restoreAppearanceDefaultsButton;
         private readonly ComboBox _closeActionCombo;
         private readonly CheckBox _deleteConfirmationCheckBox;
         private readonly CheckBox _exitConfirmationCheckBox;
@@ -73,6 +75,12 @@ namespace JotTile.Config
             _fontFamilyCombo = new ComboBox();
             _fontFamilyCombo.DropDownStyle = ComboBoxStyle.DropDownList;
             _fontFamilyCombo.Items.AddRange(SettingsOptions.NoteFontFamilies.Cast<object>().ToArray());
+            _fontSizeEditor = CreateFontSizeEditor();
+            _restoreAppearanceDefaultsButton = new Button();
+            _restoreAppearanceDefaultsButton.Text = "Restore defaults";
+            _restoreAppearanceDefaultsButton.AutoSize = true;
+            _restoreAppearanceDefaultsButton.Anchor = AnchorStyles.Left;
+            _restoreAppearanceDefaultsButton.Click += HandleRestoreAppearanceDefaultsClicked;
             _closeActionCombo = new ComboBox();
             _closeActionCombo.DropDownStyle = ComboBoxStyle.DropDownList;
             _closeActionCombo.Items.AddRange(Enum.GetNames(typeof(NoteCloseAction)));
@@ -92,7 +100,6 @@ namespace JotTile.Config
 
             tabs.TabPages.Add(CreateAppearanceTab());
             tabs.TabPages.Add(CreateBehaviorTab());
-            tabs.TabPages.Add(CreateStartupTab());
 
             FlowLayoutPanel buttonPanel = new FlowLayoutPanel();
             buttonPanel.Dock = DockStyle.Fill;
@@ -155,6 +162,8 @@ namespace JotTile.Config
             AddEditorRow(layout, 12, "Gradient", _useGradientCheckBox);
             AddEditorRow(layout, 13, "Gradient direction", _gradientDirectionCombo);
             AddEditorRow(layout, 14, "Note font", _fontFamilyCombo);
+            AddEditorRow(layout, 15, "Note text size", _fontSizeEditor);
+            AddEditorRow(layout, 16, "Defaults", _restoreAppearanceDefaultsButton);
 
             TableLayoutPanel appearanceLayout = new TableLayoutPanel();
             appearanceLayout.Dock = DockStyle.Fill;
@@ -191,22 +200,10 @@ namespace JotTile.Config
             AddEditorRow(layout, 1, "Delete confirmation", _deleteConfirmationCheckBox);
             AddEditorRow(layout, 2, "Exit confirmation", _exitConfirmationCheckBox);
             AddEditorRow(layout, 3, "Unsaved exit action", _exitUnsavedActionCombo);
+            AddEditorRow(layout, 4, "Startup", _launchAtSignInCheckBox);
             page.Controls.Add(layout);
             layout.Dock = DockStyle.Fill;
             layout.Padding = new Padding(12);
-            return page;
-        }
-
-        private TabPage CreateStartupTab()
-        {
-            TabPage page = new TabPage("Startup");
-            FlowLayoutPanel layout = new FlowLayoutPanel();
-            layout.Dock = DockStyle.Fill;
-            layout.Padding = new Padding(12);
-            layout.FlowDirection = FlowDirection.TopDown;
-            layout.WrapContents = false;
-            layout.Controls.Add(_launchAtSignInCheckBox);
-            page.Controls.Add(layout);
             return page;
         }
 
@@ -234,6 +231,7 @@ namespace JotTile.Config
                 _useGradientCheckBox,
                 _gradientDirectionCombo,
                 _fontFamilyCombo,
+                _fontSizeEditor,
                 _closeActionCombo,
                 _deleteConfirmationCheckBox,
                 _exitConfirmationCheckBox,
@@ -287,7 +285,8 @@ namespace JotTile.Config
             {
                 _frameThickness,
                 _innerStrokeThickness,
-                _outerStrokeThickness
+                _outerStrokeThickness,
+                _fontSizeEditor
             };
 
             for (int index = 0; index < numericEditors.Length; index++)
@@ -312,6 +311,13 @@ namespace JotTile.Config
         private void HandleCancelClicked(object? sender, EventArgs e)
         {
             Close();
+        }
+
+        private void HandleRestoreAppearanceDefaultsClicked(object? sender, EventArgs e)
+        {
+            BindAppearanceSettingsToUi(AppSettings.CreateDefault());
+            UpdatePreview();
+            _statusLabel.Text = "Appearance defaults restored.";
         }
 
         private bool SaveSettings(bool closeAfterSave)
@@ -340,21 +346,7 @@ namespace JotTile.Config
 
         private void BindSettingsToUi()
         {
-            SelectColor(_backgroundStartCombo, _settings.BackgroundColorStart);
-            SelectColor(_backgroundEndCombo, _settings.BackgroundColorEnd);
-            SelectColor(_textColorCombo, _settings.TextColor);
-            SelectColor(_frameColorCombo, _settings.FrameColor);
-            SelectColor(_innerStrokeColorCombo, _settings.InnerStrokeColor);
-            SelectColor(_outerStrokeColorCombo, _settings.OuterStrokeColor);
-            SelectColor(_buttonColorCombo, _settings.ButtonColor);
-            SelectColor(_buttonHoverColorCombo, _settings.ButtonHoverColor);
-            SelectColor(_buttonDisabledColorCombo, _settings.ButtonDisabledColor);
-            _frameThickness.Value = _settings.FrameThickness;
-            _innerStrokeThickness.Value = _settings.InnerStrokeThickness;
-            _outerStrokeThickness.Value = _settings.OuterStrokeThickness;
-            _useGradientCheckBox.Checked = _settings.UseGradient;
-            _gradientDirectionCombo.SelectedItem = _settings.GradientDirection.ToString();
-            _fontFamilyCombo.SelectedItem = _settings.NoteFontFamily;
+            BindAppearanceSettingsToUi(_settings);
             _closeActionCombo.SelectedItem = _settings.CloseAction.ToString();
             _deleteConfirmationCheckBox.Checked = _settings.DeleteRequiresConfirmation;
             _exitConfirmationCheckBox.Checked = _settings.ExitRequiresConfirmation;
@@ -380,6 +372,7 @@ namespace JotTile.Config
             settings.UseGradient = _useGradientCheckBox.Checked;
             settings.GradientDirection = ParseEnum<GradientDirection>(_gradientDirectionCombo.SelectedItem, GradientDirection.Vertical);
             settings.NoteFontFamily = _fontFamilyCombo.SelectedItem as string ?? AppSettings.CreateDefault().NoteFontFamily;
+            settings.NoteFontSize = (float)_fontSizeEditor.Value;
             settings.CloseAction = ParseEnum<NoteCloseAction>(_closeActionCombo.SelectedItem, NoteCloseAction.Delete);
             settings.DeleteRequiresConfirmation = _deleteConfirmationCheckBox.Checked;
             settings.ExitRequiresConfirmation = _exitConfirmationCheckBox.Checked;
@@ -392,6 +385,26 @@ namespace JotTile.Config
         private void UpdatePreview()
         {
             _previewControl.ApplySettings(ReadSettingsFromUi());
+        }
+
+        private void BindAppearanceSettingsToUi(AppSettings settings)
+        {
+            SelectColor(_backgroundStartCombo, settings.BackgroundColorStart);
+            SelectColor(_backgroundEndCombo, settings.BackgroundColorEnd);
+            SelectColor(_textColorCombo, settings.TextColor);
+            SelectColor(_frameColorCombo, settings.FrameColor);
+            SelectColor(_innerStrokeColorCombo, settings.InnerStrokeColor);
+            SelectColor(_outerStrokeColorCombo, settings.OuterStrokeColor);
+            SelectColor(_buttonColorCombo, settings.ButtonColor);
+            SelectColor(_buttonHoverColorCombo, settings.ButtonHoverColor);
+            SelectColor(_buttonDisabledColorCombo, settings.ButtonDisabledColor);
+            _frameThickness.Value = settings.FrameThickness;
+            _innerStrokeThickness.Value = settings.InnerStrokeThickness;
+            _outerStrokeThickness.Value = settings.OuterStrokeThickness;
+            _useGradientCheckBox.Checked = settings.UseGradient;
+            _gradientDirectionCombo.SelectedItem = settings.GradientDirection.ToString();
+            _fontFamilyCombo.SelectedItem = settings.NoteFontFamily;
+            SetNumericValue(_fontSizeEditor, (decimal)settings.NoteFontSize);
         }
 
         private void HandleAppearanceLayoutResize(object? sender, EventArgs e)
@@ -438,7 +451,7 @@ namespace JotTile.Config
         {
             TableLayoutPanel layout = new TableLayoutPanel();
             layout.ColumnCount = 2;
-            layout.RowCount = 16;
+            layout.RowCount = 18;
             layout.AutoScroll = true;
             layout.Dock = DockStyle.Fill;
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180f));
@@ -477,6 +490,16 @@ namespace JotTile.Config
             return editor;
         }
 
+        private static NumericUpDown CreateFontSizeEditor()
+        {
+            NumericUpDown editor = new NumericUpDown();
+            editor.Minimum = 8;
+            editor.Maximum = 24;
+            editor.DecimalPlaces = 1;
+            editor.Increment = 0.5m;
+            return editor;
+        }
+
         private static void SelectColor(ComboBox combo, string hexValue)
         {
             for (int index = 0; index < combo.Items.Count; index++)
@@ -506,6 +529,12 @@ namespace JotTile.Config
             }
 
             return AppSettings.CreateDefault().BackgroundColorStart;
+        }
+
+        private static void SetNumericValue(NumericUpDown editor, decimal value)
+        {
+            decimal clampedValue = Math.Min(editor.Maximum, Math.Max(editor.Minimum, value));
+            editor.Value = clampedValue;
         }
 
         private static TEnum ParseEnum<TEnum>(object? selectedItem, TEnum fallback)

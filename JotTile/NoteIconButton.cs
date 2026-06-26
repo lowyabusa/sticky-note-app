@@ -20,7 +20,7 @@ namespace JotTile
             ButtonColor = Color.FromArgb(217, 217, 217);
             HoverColor = Color.FromArgb(236, 236, 236);
             DisabledColor = Color.FromArgb(104, 104, 104);
-            GlyphColor = Color.FromArgb(68, 54, 0);
+            GlyphColor = Color.Black;
             DisabledGlyphColor = Color.FromArgb(145, 132, 100);
             RenderMode = ButtonRenderMode.SystemDefault;
         }

@@ -33,36 +33,41 @@ namespace JotTile.Core
 
             if (mode == ButtonRenderMode.SystemDefault)
             {
-                DrawSystemStyledButton(graphics, bounds, glyph, enabled, hovered, pressed, isDangerButton);
+                DrawSystemStyledButton(graphics, bounds, glyph, enabled, hovered, pressed, isDangerButton, glyphColor, disabledGlyphColor);
                 return;
             }
 
             DrawCustomStyledButton(graphics, bounds, glyph, enabled, hovered, pressed, buttonColor, hoverColor, disabledColor, glyphColor, disabledGlyphColor);
         }
 
-        private static void DrawSystemStyledButton(Graphics graphics, Rectangle bounds, NoteButtonGlyph glyph, bool enabled, bool hovered, bool pressed, bool isDangerButton)
+        private static void DrawSystemStyledButton(
+            Graphics graphics,
+            Rectangle bounds,
+            NoteButtonGlyph glyph,
+            bool enabled,
+            bool hovered,
+            bool pressed,
+            bool isDangerButton,
+            Color glyphColor,
+            Color disabledGlyphColor)
         {
             Color backColor;
             Color borderColor;
-            Color lineColor;
 
             if (!enabled)
             {
                 backColor = SystemDisabledColor;
                 borderColor = Color.FromArgb(83, 83, 83);
-                lineColor = Color.FromArgb(38, 38, 38);
             }
             else if (isDangerButton)
             {
                 backColor = pressed ? SystemClosePressedColor : (hovered ? SystemCloseHoverColor : SystemCloseColor);
                 borderColor = Color.FromArgb(112, 24, 24);
-                lineColor = Color.White;
             }
             else
             {
                 backColor = pressed ? SystemPressedColor : (hovered ? SystemHoverColor : SystemButtonColor);
                 borderColor = Color.FromArgb(120, 120, 120);
-                lineColor = Color.FromArgb(34, 34, 34);
             }
 
             using (SolidBrush brush = new SolidBrush(backColor))
@@ -72,7 +77,7 @@ namespace JotTile.Core
                 graphics.DrawRectangle(pen, bounds.X, bounds.Y, bounds.Width - 1, bounds.Height - 1);
             }
 
-            DrawGlyph(graphics, glyph, bounds, lineColor);
+            DrawGlyph(graphics, glyph, bounds, enabled ? glyphColor : disabledGlyphColor);
         }
 
         private static void DrawCustomStyledButton(

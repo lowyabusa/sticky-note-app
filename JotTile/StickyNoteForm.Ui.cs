@@ -7,6 +7,7 @@ namespace JotTile
 {
     internal sealed partial class StickyNoteForm
     {
+        private static readonly Color ActiveHeaderGlyphColor = Color.Black;
         private NoteIconButton _editSaveButton = null!;
         private NoteIconButton _copyButton = null!;
         private NoteIconButton _closeButton = null!;
@@ -98,9 +99,9 @@ namespace JotTile
             _inputBox.BackColor = Blend(backgroundStart, backgroundEnd);
             _displayLabel.BackColor = Color.Transparent;
 
-            ApplyButtonPalette(_editSaveButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, renderMode);
-            ApplyButtonPalette(_copyButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, renderMode);
-            ApplyButtonPalette(_closeButton, buttonColor, buttonHoverColor, buttonDisabledColor, textColor, renderMode);
+            ApplyButtonPalette(_editSaveButton, buttonColor, buttonHoverColor, buttonDisabledColor, renderMode);
+            ApplyButtonPalette(_copyButton, buttonColor, buttonHoverColor, buttonDisabledColor, renderMode);
+            ApplyButtonPalette(_closeButton, buttonColor, buttonHoverColor, buttonDisabledColor, renderMode);
 
             _copyFeedbackLabel.ForeColor = textColor;
             _copyFeedbackLabel.BackColor = Blend(backgroundStart, buttonHoverColor);
@@ -108,12 +109,12 @@ namespace JotTile
             Invalidate();
         }
 
-        private static void ApplyButtonPalette(NoteIconButton button, Color buttonColor, Color hoverColor, Color disabledColor, Color textColor, ButtonRenderMode renderMode)
+        private static void ApplyButtonPalette(NoteIconButton button, Color buttonColor, Color hoverColor, Color disabledColor, ButtonRenderMode renderMode)
         {
             button.ButtonColor = buttonColor;
             button.HoverColor = hoverColor;
             button.DisabledColor = disabledColor;
-            button.GlyphColor = textColor;
+            button.GlyphColor = ActiveHeaderGlyphColor;
             button.DisabledGlyphColor = ControlPaint.Dark(disabledColor);
             button.RenderMode = renderMode;
             button.Invalidate();
@@ -121,7 +122,7 @@ namespace JotTile
 
         private Font CreateNoteFont()
         {
-            return new Font(_settings.NoteFontFamily, 10.0f, FontStyle.Regular, GraphicsUnit.Point);
+            return new Font(_settings.NoteFontFamily, _settings.NoteFontSize, FontStyle.Regular, GraphicsUnit.Point);
         }
 
         private void HandleHeaderLayoutChanged(object? sender, LayoutEventArgs e)
