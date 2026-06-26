@@ -1,6 +1,6 @@
 # JotTile
 
-                            ![alt text](<2026-06-26 23_11_51-.png>)
+![JotTile note](JotTile/Assets/aNote.png)
 
 JotTile is a small local WinForms note app for Windows. It keeps sticky notes offline, restores them on sign-in, supports a tray-only idle state, and ships with a separate `config.exe` for appearance and behavior settings.
 
@@ -27,7 +27,7 @@ app\Uninstall JotTile.cmd
 Generate a new note via the /app/JotTile.exe
 or at the Windows dropdown tray with right click.
 
-                        ![Main window]
+![Create a new note](JotTile/Assets/addNote.png)
 
 - A brand-new note opens in `Editing-Mode`.
 - `Enter` inserts a line break for text formation.
